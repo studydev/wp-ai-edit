@@ -1,0 +1,32 @@
+{
+	"translation-revision-date": "2026-04-11T00:00:00+09:00",
+	"generator": "WP AI Edit",
+	"domain": "messages",
+	"locale_data": {
+		"messages": {
+			"": {
+				"domain": "messages",
+				"lang": "ko_KR",
+				"plural-forms": "nplurals=1; plural=0;"
+			},
+			"AI Edit": [ "AI 편집" ],
+			"No text content in the selected block.": [ "선택된 블록에 텍스트 내용이 없습니다." ],
+			"Generating\u2026": [ "생성 중\u2026" ],
+			"Use": [ "사용" ],
+			"Regenerate": [ "재생성" ],
+			"Write More": [ "이어쓰기" ],
+			"Close": [ "닫기" ],
+			"Enter your command": [ "명령을 입력하세요" ],
+			"e.g., Rewrite this in a formal tone": [ "예: 이 글을 격식체로 다시 써줘" ],
+			"Cancel": [ "취소" ],
+			"Run": [ "실행" ],
+			"Your Command": [ "자유 명령" ],
+			"My Style": [ "내 스타일" ],
+			"Highlight": [ "하이라이트" ],
+			"Summarize": [ "요약" ],
+			"Write Analogy": [ "비유로 쓰기" ],
+			"Fix Grammar": [ "문법 교정" ],
+			"SEO Helper": [ "SEO 도우미" ]
+		}
+	}
+}

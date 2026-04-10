@@ -1,0 +1,68 @@
+.wp-ai-edit-settings .wp-ai-edit-prompt-textarea {
+    font-family: monospace;
+    min-height: 100px;
+}
+
+.wp-ai-edit-settings .wp-ai-edit-reset-prompt {
+    display: inline-block;
+    margin-top: 4px;
+    color: #b32d2e;
+    text-decoration: none;
+}
+
+.wp-ai-edit-settings .wp-ai-edit-reset-prompt:hover {
+    color: #a00;
+}
+
+#wp-ai-edit-connection-status {
+    display: inline-block;
+    margin-left: 10px;
+    font-weight: 600;
+}
+
+#wp-ai-edit-connection-status.success {
+    color: #00a32a;
+}
+
+#wp-ai-edit-connection-status.error {
+    color: #d63638;
+}
+
+#wp-ai-edit-connection-status.testing {
+    color: #dba617;
+}
+
+/* ── Prompt Preview ── */
+.wp-ai-edit-prompt-preview {
+    margin-top: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #f9f9f9;
+}
+
+.wp-ai-edit-prompt-preview summary {
+    cursor: pointer;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: #2271b1;
+    font-weight: 600;
+    user-select: none;
+}
+
+.wp-ai-edit-prompt-preview summary:hover {
+    color: #135e96;
+}
+
+.wp-ai-edit-prompt-preview .wp-ai-edit-preview-content {
+    margin: 0;
+    padding: 12px;
+    border-top: 1px solid #ddd;
+    background: #fff;
+    font-family: monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+}

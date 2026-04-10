@@ -1,0 +1,200 @@
+// ── AI Edit Toolbar Button ──
+.wp-ai-edit-toolbar-button {
+    svg {
+        fill: currentColor;
+    }
+}
+
+// ── Popover Container ──
+.wp-ai-edit-popover {
+    .components-popover__content {
+        min-width: 220px;
+    }
+}
+
+// ── Action Popover ──
+.wp-ai-edit-action-popover {
+    padding: 4px 0;
+
+    .components-menu-group {
+        padding: 0;
+    }
+
+    .components-menu-item__button {
+        width: 100%;
+        padding: 8px 16px;
+        font-size: 13px;
+
+        &:hover {
+            background: #f0f0f0;
+        }
+
+        .components-menu-item__item {
+            gap: 8px;
+        }
+    }
+}
+
+// ── Command Input ──
+.wp-ai-edit-command-input {
+    padding: 12px 16px;
+    min-width: 300px;
+
+    .components-base-control {
+        margin-bottom: 8px;
+    }
+
+    .components-text-control__input {
+        font-size: 13px;
+    }
+}
+
+// ── Result Popover ──
+.wp-ai-edit-result-popover-wrapper {
+    .components-popover__content {
+        min-width: 360px;
+        max-width: 480px;
+    }
+}
+
+.wp-ai-edit-result-popover {
+    padding: 16px;
+}
+
+.wp-ai-edit-result-content {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.6;
+    word-wrap: break-word;
+}
+
+.wp-ai-edit-streamed-text {
+    color: #1e1e1e;
+
+    p {
+        margin: 0 0 0.8em;
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    strong,
+    b {
+        font-weight: 700;
+    }
+
+    em,
+    i {
+        font-style: italic;
+    }
+
+    mark {
+        background: #fff3cd;
+        padding: 0.1em 0.2em;
+        border-radius: 2px;
+    }
+
+    h2,
+    h3,
+    h4 {
+        margin: 0.8em 0 0.4em;
+        font-weight: 700;
+    }
+
+    h2 {
+        font-size: 1.2em;
+    }
+
+    h3 {
+        font-size: 1.1em;
+    }
+
+    h4 {
+        font-size: 1em;
+    }
+
+    ul,
+    ol {
+        margin: 0.4em 0;
+        padding-left: 1.5em;
+    }
+
+    li {
+        margin-bottom: 0.2em;
+    }
+
+    blockquote {
+        border-left: 3px solid #ddd;
+        margin: 0.4em 0;
+        padding: 0.2em 0.8em;
+        color: #555;
+    }
+
+    code {
+        background: #f0f0f0;
+        padding: 0.1em 0.3em;
+        border-radius: 2px;
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+}
+
+.wp-ai-edit-placeholder {
+    color: #757575;
+    font-style: italic;
+}
+
+// ── Blinking Cursor ──
+.wp-ai-edit-cursor {
+    display: inline;
+    animation: wp-ai-edit-blink 0.7s step-end infinite;
+    color: #1e1e1e;
+    font-weight: bold;
+}
+
+@keyframes wp-ai-edit-blink {
+    50% {
+        opacity: 0;
+    }
+}
+
+// ── Error State ──
+.wp-ai-edit-error {
+    color: #cc1818;
+    background: #fcf0f1;
+    border: 1px solid #f0c5c5;
+    border-radius: 4px;
+    padding: 8px 12px;
+
+    p {
+        margin: 0;
+        font-size: 13px;
+    }
+}
+
+// ── Loading Bar ──
+.wp-ai-edit-loading-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px 0;
+    margin-bottom: 8px;
+}
+
+// ── Result Action Buttons ──
+.wp-ai-edit-result-actions {
+    border-top: 1px solid #e0e0e0;
+    padding-top: 8px;
+    flex-wrap: wrap;
+
+    .components-button {
+        font-size: 12px;
+    }
+}
