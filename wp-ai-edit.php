@@ -2,7 +2,7 @@
 /**
  * Plugin Name: WP AI Edit
  * Plugin URI:  https://github.com/studydev/wp-ai-edit
- * Description: AI-powered content editing for the WordPress Gutenberg editor. Provides Write More, Improve, Summarize, Write Analogy, Fix Grammar, and custom command features via Azure OpenAI API.
+ * Description: AI-powered content editing for the WordPress Gutenberg editor. Provides writing, summarizing, SEO, and custom command features via Azure OpenAI API or OpenAI API using GPT-5.4 models.
  * Version:     1.0.0
  * Requires at least: 6.4
  * Requires PHP: 8.3

@@ -7,14 +7,37 @@
 		const status = document.getElementById(
 			'wp-ai-edit-connection-status'
 		);
+		const providerSelect = document.getElementById( 'wp-ai-edit-provider' );
 		const endpointInput = document.getElementById( 'wp-ai-edit-endpoint' );
+		const endpointHint = document.getElementById(
+			'wp-ai-edit-endpoint-hint'
+		);
 		const apiKeyInput = document.getElementById( 'wp-ai-edit-api-key' );
 		const modelSelect = document.getElementById( 'wp-ai-edit-model' );
 		const tailTextarea = document.getElementById(
 			'wp-ai-edit-tail-prompt'
 		);
 		const noTailActions = config.noTailActions || [];
+		const providerDefaults = config.providerDefaults || {};
 		const separator = '\n\n' + '\u2500'.repeat( 40 ) + '\n[Tail Prompt]\n';
+
+		function updateProviderFields() {
+			const provider = providerSelect
+				? providerSelect.value
+				: 'azure_openai';
+			const providerConfig =
+				providerDefaults[ provider ] ||
+				providerDefaults.azure_openai ||
+				{};
+
+			if ( endpointInput && providerConfig.endpointPlaceholder ) {
+				endpointInput.placeholder = providerConfig.endpointPlaceholder;
+			}
+
+			if ( endpointHint && providerConfig.endpointHelp ) {
+				endpointHint.textContent = providerConfig.endpointHelp;
+			}
+		}
 
 		// ── Test Connection ──
 		if ( testBtn ) {
@@ -30,6 +53,7 @@
 						'X-WP-Nonce': config.nonce,
 					},
 					body: JSON.stringify( {
+						provider: providerSelect ? providerSelect.value : '',
 						endpoint: endpointInput ? endpointInput.value : '',
 						api_key: apiKeyInput ? apiKeyInput.value : '',
 						model: modelSelect ? modelSelect.value : '',
@@ -59,6 +83,10 @@
 						testBtn.disabled = false;
 					} );
 			} );
+		}
+
+		if ( providerSelect ) {
+			providerSelect.addEventListener( 'change', updateProviderFields );
 		}
 
 		// ── Reset prompt buttons ──
@@ -93,16 +121,16 @@
 
 		// ── Prompt Preview ──
 		function updateAllPreviews() {
-			var tailPrompt = tailTextarea ? tailTextarea.value : '';
+			const tailPrompt = tailTextarea ? tailTextarea.value : '';
 
 			document
 				.querySelectorAll( '.wp-ai-edit-prompt-preview' )
 				.forEach( function ( details ) {
-					var actionKey = details.getAttribute( 'data-action' );
-					var textarea = document.querySelector(
+					const actionKey = details.getAttribute( 'data-action' );
+					const textarea = document.querySelector(
 						'textarea[data-action="' + actionKey + '"]'
 					);
-					var pre = details.querySelector(
+					const pre = details.querySelector(
 						'.wp-ai-edit-preview-content'
 					);
 
@@ -110,7 +138,7 @@
 						return;
 					}
 
-					var promptText =
+					const promptText =
 						textarea.value ||
 						textarea.getAttribute( 'data-default' ) ||
 						'';
@@ -118,8 +146,7 @@
 					if ( noTailActions.indexOf( actionKey ) !== -1 ) {
 						pre.textContent = promptText;
 					} else {
-						pre.textContent =
-							promptText + separator + tailPrompt;
+						pre.textContent = promptText + separator + tailPrompt;
 					}
 				} );
 		}
@@ -132,6 +159,7 @@
 			} );
 
 		// Initial preview render
+		updateProviderFields();
 		updateAllPreviews();
 	} );
 } )();

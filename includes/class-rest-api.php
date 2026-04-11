@@ -126,6 +126,9 @@ final class RestApi {
             $settings = [];
         }
 
+        $provider = OpenAIClient::normalize_provider(
+            sanitize_text_field( (string) ( $params['provider'] ?? ( $settings['provider'] ?? OpenAIClient::get_default_provider() ) ) )
+        );
         $endpoint = sanitize_url( (string) ( $params['endpoint'] ?? ( $settings['endpoint'] ?? '' ) ) );
         $model    = sanitize_text_field( (string) ( $params['model'] ?? ( $settings['model'] ?? 'gpt-5.4' ) ) );
         $api_key  = sanitize_text_field( (string) ( $params['api_key'] ?? '' ) );
@@ -135,7 +138,7 @@ final class RestApi {
             $api_key   = OpenAIClient::decrypt_api_key( $encrypted ) ?? '';
         }
 
-        $client = OpenAIClient::from_config( $endpoint, $api_key, $model );
+        $client = OpenAIClient::from_config( $provider, $endpoint, $api_key, $model );
 
         if ( $client === null ) {
             return new \WP_REST_Response( [

@@ -54,9 +54,17 @@ final class AdminSettings {
         // ── API Settings Section ──
         add_settings_section(
             'wp_ai_edit_api_section',
-            __( 'Azure OpenAI API Settings', 'wp-ai-edit' ),
+            __( 'AI API Settings', 'wp-ai-edit' ),
             [ $this, 'render_api_section' ],
             self::MENU_SLUG
+        );
+
+        add_settings_field(
+            'provider',
+            __( 'API Provider', 'wp-ai-edit' ),
+            [ $this, 'render_provider_field' ],
+            self::MENU_SLUG,
+            'wp_ai_edit_api_section'
         );
 
         add_settings_field(
@@ -136,6 +144,11 @@ final class AdminSettings {
 
         $sanitized = [];
 
+        $provider = OpenAIClient::normalize_provider(
+            sanitize_text_field( (string) ( $input['provider'] ?? ( $current['provider'] ?? OpenAIClient::get_default_provider() ) ) )
+        );
+        $sanitized['provider'] = $provider;
+
         // Endpoint
         $endpoint = sanitize_url( $input['endpoint'] ?? '' );
         if ( $endpoint !== '' && ! OpenAIClient::validate_endpoint( $endpoint ) ) {
@@ -211,6 +224,16 @@ final class AdminSettings {
                 'restUrl'        => esc_url_raw( rest_url( 'wp-ai-edit/v1/' ) ),
                 'nonce'          => wp_create_nonce( 'wp_rest' ),
                 'noTailActions'  => PromptManager::get_no_tail_actions(),
+                'providerDefaults' => [
+                    OpenAIClient::PROVIDER_AZURE_OPENAI => [
+                        'endpointPlaceholder' => 'https://your-resource.openai.azure.com/openai/v1',
+                        'endpointHelp'        => __( 'Azure OpenAI example: https://your-resource.openai.azure.com/openai/v1', 'wp-ai-edit' ),
+                    ],
+                    OpenAIClient::PROVIDER_OPENAI => [
+                        'endpointPlaceholder' => OpenAIClient::get_default_endpoint_for_provider( OpenAIClient::PROVIDER_OPENAI ),
+                        'endpointHelp'        => __( 'OpenAI uses https://api.openai.com/v1 by default. Leave the endpoint blank to use it, or enter a compatible base URL.', 'wp-ai-edit' ),
+                    ],
+                ],
                 'i18n'           => [
                     'testing'      => __( 'Testing connection...', 'wp-ai-edit' ),
                     'success'      => __( 'Connection successful!', 'wp-ai-edit' ),
@@ -239,7 +262,31 @@ final class AdminSettings {
     }
 
     public function render_api_section(): void {
-        echo '<p>' . esc_html__( 'Configure your Azure OpenAI API connection settings.', 'wp-ai-edit' ) . '</p>';
+        echo '<p>' . esc_html__( 'Choose Azure OpenAI or OpenAI, then configure the API connection for GPT-5.4 models.', 'wp-ai-edit' ) . '</p>';
+    }
+
+    public function render_provider_field(): void {
+        $settings  = get_option( self::OPTION_NAME, [] );
+        $value     = OpenAIClient::normalize_provider( (string) ( $settings['provider'] ?? OpenAIClient::get_default_provider() ) );
+        $providers = [
+            OpenAIClient::PROVIDER_AZURE_OPENAI => __( 'Azure OpenAI', 'wp-ai-edit' ),
+            OpenAIClient::PROVIDER_OPENAI       => __( 'OpenAI', 'wp-ai-edit' ),
+        ];
+        ?>
+        <select id="wp-ai-edit-provider" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[provider]">
+            <?php foreach ( $providers as $provider_value => $provider_label ) : ?>
+                <option
+                    value="<?php echo esc_attr( $provider_value ); ?>"
+                    <?php selected( $value, $provider_value ); ?>
+                >
+                    <?php echo esc_html( $provider_label ); ?>
+                </option>
+            <?php endforeach; ?>
+        </select>
+        <p class="description">
+            <?php esc_html_e( 'Select which API provider should be used for GPT-5.4 requests.', 'wp-ai-edit' ); ?>
+        </p>
+        <?php
     }
 
     public function render_prompt_section(): void {
@@ -257,8 +304,12 @@ final class AdminSettings {
     }
 
     public function render_endpoint_field(): void {
-        $settings = get_option( self::OPTION_NAME, [] );
-        $value    = $settings['endpoint'] ?? '';
+        $settings    = get_option( self::OPTION_NAME, [] );
+        $provider    = OpenAIClient::normalize_provider( (string) ( $settings['provider'] ?? OpenAIClient::get_default_provider() ) );
+        $value       = $settings['endpoint'] ?? '';
+        $placeholder = $provider === OpenAIClient::PROVIDER_OPENAI
+            ? OpenAIClient::get_default_endpoint_for_provider( $provider )
+            : 'https://your-resource.openai.azure.com/openai/v1';
         ?>
         <input
             type="url"
@@ -266,10 +317,16 @@ final class AdminSettings {
             name="<?php echo esc_attr( self::OPTION_NAME ); ?>[endpoint]"
             value="<?php echo esc_attr( $value ); ?>"
             class="regular-text"
-            placeholder="https://your-resource.openai.azure.com/openai/v1"
+            placeholder="<?php echo esc_attr( $placeholder ); ?>"
         />
-        <p class="description">
-            <?php esc_html_e( 'Enter your Azure OpenAI API endpoint URL.', 'wp-ai-edit' ); ?>
+        <p class="description" id="wp-ai-edit-endpoint-hint">
+            <?php
+            echo esc_html(
+                $provider === OpenAIClient::PROVIDER_OPENAI
+                    ? __( 'OpenAI uses https://api.openai.com/v1 by default. Leave the endpoint blank to use it, or enter a compatible base URL.', 'wp-ai-edit' )
+                    : __( 'Azure OpenAI example: https://your-resource.openai.azure.com/openai/v1', 'wp-ai-edit' )
+            );
+            ?>
         </p>
         <?php
     }

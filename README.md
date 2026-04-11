@@ -2,9 +2,9 @@
 
 **AI-powered content editing for the WordPress Gutenberg editor.**
 
-Gutenberg 블록 에디터에 AI 편집 기능을 추가하는 WordPress 플러그인입니다. Azure OpenAI API를 연동하여 글쓰기, 교정, 요약, SEO 분석 등을 에디터 안에서 바로 수행합니다.
+Gutenberg 블록 에디터에 AI 편집 기능을 추가하는 WordPress 플러그인입니다. Azure OpenAI API와 OpenAI API를 연동하여 GPT-5.4 계열 모델로 글쓰기, 교정, 요약, SEO 분석 등을 에디터 안에서 바로 수행합니다.
 
-A WordPress plugin that adds AI editing capabilities directly into the Gutenberg block editor toolbar. Powered by Azure OpenAI API for writing, proofreading, summarizing, SEO analysis, and more — all within the editor.
+A WordPress plugin that adds AI editing capabilities directly into the Gutenberg block editor toolbar. Powered by Azure OpenAI API or OpenAI API with GPT-5.4 family models for writing, proofreading, summarizing, SEO analysis, and more.
 
 ## 에디터 액션 메뉴 / Editor Action Menu
 
@@ -17,9 +17,9 @@ A WordPress plugin that adds AI editing capabilities directly into the Gutenberg
 
 This plugin was created to help Hemtory, a homemaker who is not deeply familiar with IT or generative AI, start blogging with WordPress more comfortably. The goal was to keep AI features inside the familiar Gutenberg editor instead of forcing a separate workflow, while still allowing behavior and prompts to be customized from the settings screen.
 
-다른 LLM 연동도 구조상 어렵지 않지만, 우선은 Azure OpenAI의 GPT-5.4 API를 연결하면 바로 사용할 수 있도록 구현했습니다.
+현재는 Azure OpenAI와 OpenAI를 모두 지원하며, 두 경로 모두 GPT-5.4 계열 API를 바로 사용할 수 있도록 구성했습니다.
 
-The architecture can be extended to support other LLM providers, but the first priority was immediate usability with Azure OpenAI GPT-5.4 models.
+The plugin now supports both Azure OpenAI and OpenAI directly, with GPT-5.4 family models available from either provider.
 
 ## 화면 미리보기 / Screenshots
 
@@ -58,7 +58,7 @@ The architecture can be extended to support other LLM providers, but the first p
 
 - WordPress 6.4+
 - PHP 8.3+
-- Azure OpenAI API endpoint and key
+- Azure OpenAI API endpoint and key, or an OpenAI API key
 
 ---
 
@@ -99,7 +99,7 @@ npm run start   # watch mode
 
 1. 플러그인을 활성화합니다. / Activate the plugin.
 2. 관리자 메뉴 **WP AI Edit**으로 이동합니다. / Go to **WP AI Edit** in the admin menu.
-3. Azure OpenAI API **엔드포인트**, **API 키**, **모델**을 입력합니다. / Enter your Azure OpenAI **endpoint**, **API key**, and **model**.
+3. 사용할 **API Provider**를 선택한 뒤, Azure OpenAI 또는 OpenAI용 **endpoint**, **API key**, **model**을 입력합니다. OpenAI는 기본 엔드포인트를 그대로 사용할 수 있습니다. / Choose an **API Provider**, then enter the **endpoint**, **API key**, and **model** for Azure OpenAI or OpenAI. OpenAI can use the default endpoint.
 4. **연결 테스트**를 클릭하여 확인합니다. / Click **Test Connection** to verify.
 5. Gutenberg 에디터에서 텍스트 블록을 선택하면 AI 버튼이 표시됩니다. / Select a text block in the Gutenberg editor to see the AI button.
 
@@ -119,7 +119,7 @@ wp-ai-edit/
 ├── wp-ai-edit.php              # 메인 플러그인 파일 / Main plugin file
 ├── includes/
 │   ├── class-admin-settings.php  # 관리자 설정 페이지 / Admin settings page
-│   ├── class-openai-client.php   # Azure OpenAI API 클라이언트 / API client
+│   ├── class-openai-client.php   # Azure OpenAI / OpenAI API 클라이언트 / API client
 │   ├── class-plugin.php          # 플러그인 부트스트랩 / Plugin bootstrap
 │   ├── class-prompt-manager.php  # 프롬프트 관리 / Prompt management
 │   └── class-rest-api.php        # REST API 엔드포인트 / REST API endpoints

@@ -8,7 +8,7 @@ Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-AI-powered content editing for the WordPress Gutenberg editor.
+AI-powered content editing for the WordPress Gutenberg editor with Azure OpenAI or OpenAI GPT-5.4 models.
 
 == Description ==
 
@@ -36,15 +36,15 @@ WP AI Edit adds AI-powered editing capabilities directly into the Gutenberg bloc
 
 **Requirements:**
 
-* Azure OpenAI API endpoint and key (user-provided)
+* Azure OpenAI API endpoint and key, or an OpenAI API key (user-provided)
 
 == Installation ==
 
-1. Download `wp-ai-edit.zip` from the `output/` directory
+1. Download `wp-ai-edit.zip` from the `releases/` directory
 2. In WordPress admin, go to **Plugins → Add New → Upload Plugin** and upload the ZIP file
 3. Activate the plugin
 4. Go to **WP AI Edit** in the admin menu
-5. Enter your Azure OpenAI API endpoint, key, and select a model
+5. Choose an API provider, then enter the endpoint, key, and model for Azure OpenAI or OpenAI
 6. Click **Test Connection** to verify
 7. Start editing with AI in the Gutenberg editor
 
@@ -53,7 +53,7 @@ WP AI Edit adds AI-powered editing capabilities directly into the Gutenberg bloc
 == Frequently Asked Questions ==
 
 = What API do I need? =
-You need an Azure OpenAI API endpoint and key.
+You can use either Azure OpenAI or OpenAI. Azure OpenAI requires an endpoint and key. OpenAI requires an API key and can use the default endpoint.
 
 = Is my API key secure? =
 Yes. API keys are encrypted using libsodium before storage.

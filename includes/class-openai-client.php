@@ -10,14 +10,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 final class OpenAIClient {
 
+    public const PROVIDER_AZURE_OPENAI = 'azure_openai';
+    public const PROVIDER_OPENAI       = 'openai';
+
+    private const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1';
+
+    private readonly string $provider;
     private readonly string $endpoint;
     private readonly string $api_key;
     private readonly string $model;
 
-    public function __construct( string $endpoint, string $api_key, string $model ) {
+    public function __construct( string $provider, string $endpoint, string $api_key, string $model ) {
+        $this->provider = self::normalize_provider( $provider );
         $this->endpoint = rtrim( $endpoint, '/' );
         $this->api_key  = $api_key;
         $this->model    = $model;
+    }
+
+    public static function get_default_provider(): string {
+        return self::PROVIDER_AZURE_OPENAI;
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function get_supported_providers(): array {
+        return [
+            self::PROVIDER_AZURE_OPENAI,
+            self::PROVIDER_OPENAI,
+        ];
+    }
+
+    public static function normalize_provider( string $provider ): string {
+        return in_array( $provider, self::get_supported_providers(), true )
+            ? $provider
+            : self::get_default_provider();
+    }
+
+    public static function get_default_endpoint_for_provider( string $provider ): string {
+        $normalized_provider = self::normalize_provider( $provider );
+
+        if ( $normalized_provider === self::PROVIDER_OPENAI ) {
+            return self::OPENAI_API_ENDPOINT;
+        }
+
+        return '';
     }
 
     /**
@@ -65,7 +102,8 @@ final class OpenAIClient {
             return null;
         }
 
-        $endpoint  = $settings['endpoint'] ?? '';
+        $provider  = self::normalize_provider( (string) ( $settings['provider'] ?? self::get_default_provider() ) );
+        $endpoint  = self::normalize_endpoint( $provider, (string) ( $settings['endpoint'] ?? '' ) );
         $encrypted = $settings['api_key_encrypted'] ?? '';
         $model     = $settings['model'] ?? 'gpt-5.4';
 
@@ -82,11 +120,12 @@ final class OpenAIClient {
             return null;
         }
 
-        return new self( $endpoint, $api_key, $model );
+        return new self( $provider, $endpoint, $api_key, $model );
     }
 
-    public static function from_config( string $endpoint, string $api_key, string $model ): ?self {
-        $normalized_endpoint = rtrim( sanitize_url( $endpoint ), '/' );
+    public static function from_config( string $provider, string $endpoint, string $api_key, string $model ): ?self {
+        $normalized_provider = self::normalize_provider( $provider );
+        $normalized_endpoint = self::normalize_endpoint( $normalized_provider, $endpoint );
         $normalized_model    = sanitize_text_field( $model );
 
         if ( $normalized_endpoint === '' || $api_key === '' || $normalized_model === '' ) {
@@ -97,7 +136,17 @@ final class OpenAIClient {
             return null;
         }
 
-        return new self( $normalized_endpoint, $api_key, $normalized_model );
+        return new self( $normalized_provider, $normalized_endpoint, $api_key, $normalized_model );
+    }
+
+    private static function normalize_endpoint( string $provider, string $endpoint ): string {
+        $normalized_endpoint = rtrim( sanitize_url( $endpoint ), '/' );
+
+        if ( $normalized_endpoint !== '' ) {
+            return $normalized_endpoint;
+        }
+
+        return self::get_default_endpoint_for_provider( $provider );
     }
 
     /**
@@ -131,11 +180,7 @@ final class OpenAIClient {
             CURLOPT_URL            => $url,
             CURLOPT_POST           => true,
             CURLOPT_POSTFIELDS     => $body,
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json',
-                'api-key: ' . $this->api_key,
-                'Authorization: Bearer ' . $this->api_key,
-            ],
+            CURLOPT_HTTPHEADER     => $this->get_curl_headers(),
             CURLOPT_RETURNTRANSFER => false,
             CURLOPT_TIMEOUT        => 120,
             CURLOPT_CONNECTTIMEOUT => 10,
@@ -228,11 +273,7 @@ final class OpenAIClient {
 
         $response = wp_remote_post( $url, [
             'timeout' => 15,
-            'headers' => [
-                'Content-Type'  => 'application/json',
-                'api-key'       => $this->api_key,
-                'Authorization' => 'Bearer ' . $this->api_key,
-            ],
+            'headers' => $this->get_wp_headers(),
             'body' => $body,
         ] );
 
@@ -265,6 +306,42 @@ final class OpenAIClient {
                 $error_msg
             ),
         ];
+    }
+
+    /**
+     * @return string[]
+     */
+    private function get_curl_headers(): array {
+        $headers = [
+            'Content-Type: application/json',
+        ];
+
+        if ( $this->provider === self::PROVIDER_OPENAI ) {
+            $headers[] = 'Authorization: Bearer ' . $this->api_key;
+            return $headers;
+        }
+
+        $headers[] = 'api-key: ' . $this->api_key;
+
+        return $headers;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function get_wp_headers(): array {
+        $headers = [
+            'Content-Type' => 'application/json',
+        ];
+
+        if ( $this->provider === self::PROVIDER_OPENAI ) {
+            $headers['Authorization'] = 'Bearer ' . $this->api_key;
+            return $headers;
+        }
+
+        $headers['api-key'] = $this->api_key;
+
+        return $headers;
     }
 
     // ── Encryption helpers ──
