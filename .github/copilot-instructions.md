@@ -19,7 +19,7 @@ WordPress Gutenberg 블록 에디터용 AI 콘텐츠 편집 플러그인. Azure 
 1. JS/CSS 변경 시: `npm run build` 실행
 2. zip 패키징:
    ```bash
-   zip -r wp-ai-edit.zip \
+   mkdir -p output && zip -r output/wp-ai-edit.zip \
      wp-ai-edit.php \
      readme.txt \
      LICENSE \
@@ -29,7 +29,7 @@ WordPress Gutenberg 블록 에디터용 AI 콘텐츠 편집 플러그인. Azure 
      languages/ \
      -x "*.DS_Store" -x "__MACOSX/*"
    ```
-3. `wp-ai-edit.zip`은 프로젝트 루트에 생성한다.
+3. `wp-ai-edit.zip`은 `output/` 디렉토리에 생성한다.
 
 ### 패키지 포함 대상
 
