@@ -66,7 +66,7 @@ The architecture can be extended to support other LLM providers, but the first p
 
 ### 방법 1: ZIP 업로드 / ZIP Upload
 
-1. `releases/` 디렉토리의 `wp-ai-edit.zip` 또는 [Releases](https://github.com/studydev/wp-ai-edit/releases) 페이지에서 다운로드합니다.
+1. `releases/` 디렉토리의 `wp-ai-edit.zip` 또는 [Releases](https://github.com/studydev/wp-ai-edit/tree/main/releases) 페이지에서 zip 파일을 다운로드합니다.
 2. WordPress 관리자 → **플러그인** → **새로 추가** → **플러그인 업로드**로 ZIP을 설치합니다.
 
    Download `wp-ai-edit.zip` from the `releases/` directory or the Releases page, then upload via **Plugins → Add New → Upload Plugin**.
