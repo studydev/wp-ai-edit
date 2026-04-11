@@ -12,8 +12,35 @@ final class OpenAIClient {
 
     public const PROVIDER_AZURE_OPENAI = 'azure_openai';
     public const PROVIDER_OPENAI       = 'openai';
+    public const PROVIDER_ANTHROPIC    = 'anthropic';
 
-    private const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1';
+    private const OPENAI_API_ENDPOINT    = 'https://api.openai.com/v1';
+    private const ANTHROPIC_API_ENDPOINT = 'https://api.anthropic.com/v1';
+    private const ANTHROPIC_VERSION      = '2023-06-01';
+    private const DEFAULT_MODEL          = 'gpt-5.4';
+
+    /**
+     * @var array<string, array<string, array{label: string, price: string}>>
+     */
+    private const PROVIDER_MODELS = [
+        self::PROVIDER_AZURE_OPENAI => [
+            'gpt-5.4-nano' => [ 'label' => 'GPT-5.4 Nano', 'price' => '$0.20 / $1.25' ],
+            'gpt-5.4-mini' => [ 'label' => 'GPT-5.4 Mini', 'price' => '$0.75 / $4.50' ],
+            'gpt-5.4'      => [ 'label' => 'GPT-5.4',      'price' => '$2.50 / $15' ],
+            'gpt-5.4-pro'  => [ 'label' => 'GPT-5.4 Pro',  'price' => '$30 / $180' ],
+        ],
+        self::PROVIDER_OPENAI => [
+            'gpt-5.4-nano' => [ 'label' => 'GPT-5.4 Nano', 'price' => '$0.20 / $1.25' ],
+            'gpt-5.4-mini' => [ 'label' => 'GPT-5.4 Mini', 'price' => '$0.75 / $4.50' ],
+            'gpt-5.4'      => [ 'label' => 'GPT-5.4',      'price' => '$2.50 / $15' ],
+            'gpt-5.4-pro'  => [ 'label' => 'GPT-5.4 Pro',  'price' => '$30 / $180' ],
+        ],
+        self::PROVIDER_ANTHROPIC => [
+            'claude-haiku-4-5'  => [ 'label' => 'Claude Haiku 4.5',  'price' => '$1 / $5' ],
+            'claude-sonnet-4-6' => [ 'label' => 'Claude Sonnet 4.6', 'price' => '$3 / $15' ],
+            'claude-opus-4-6'   => [ 'label' => 'Claude Opus 4.6',   'price' => '$5 / $25' ],
+        ],
+    ];
 
     private readonly string $provider;
     private readonly string $endpoint;
@@ -31,6 +58,10 @@ final class OpenAIClient {
         return self::PROVIDER_AZURE_OPENAI;
     }
 
+	public static function get_default_model(): string {
+		return self::DEFAULT_MODEL;
+	}
+
     /**
      * @return string[]
      */
@@ -38,6 +69,7 @@ final class OpenAIClient {
         return [
             self::PROVIDER_AZURE_OPENAI,
             self::PROVIDER_OPENAI,
+            self::PROVIDER_ANTHROPIC,
         ];
     }
 
@@ -47,8 +79,194 @@ final class OpenAIClient {
             : self::get_default_provider();
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public static function get_supported_models(): array {
+        $all = [];
+        foreach ( self::PROVIDER_MODELS as $models ) {
+            foreach ( $models as $key => $meta ) {
+                $all[ $key ] = $meta['label'];
+            }
+        }
+        return $all;
+    }
+
+    /**
+     * @return array<string, array{label: string, price: string}>
+     */
+    public static function get_models_for_provider( string $provider ): array {
+        $normalized_provider = self::normalize_provider( $provider );
+        return self::PROVIDER_MODELS[ $normalized_provider ] ?? self::PROVIDER_MODELS[ self::get_default_provider() ];
+    }
+
+    public static function get_default_model_for_provider( string $provider ): string {
+        $models = self::get_models_for_provider( $provider );
+        $keys   = array_keys( $models );
+        return $keys[0] ?? self::DEFAULT_MODEL;
+    }
+
+    public static function normalize_model( string $model ): string {
+        $normalized_model = sanitize_text_field( $model );
+
+        return array_key_exists( $normalized_model, self::get_supported_models() )
+            ? $normalized_model
+            : self::get_default_model();
+    }
+
+    public static function normalize_model_for_provider( string $model, string $provider ): string {
+        $normalized_model = sanitize_text_field( $model );
+        $provider_models  = self::get_models_for_provider( $provider );
+
+        if ( array_key_exists( $normalized_model, $provider_models ) ) {
+            return $normalized_model;
+        }
+
+        return self::get_default_model_for_provider( $provider );
+    }
+
+    public static function get_model_label( string $model ): string {
+        $all = self::get_supported_models();
+        return $all[ $model ] ?? $model;
+    }
+
+    public static function get_provider_label( string $provider ): string {
+        $normalized_provider = self::normalize_provider( $provider );
+
+        if ( $normalized_provider === self::PROVIDER_ANTHROPIC ) {
+            return __( 'Anthropic', 'wp-ai-edit' );
+        }
+
+        if ( $normalized_provider === self::PROVIDER_OPENAI ) {
+            return __( 'OpenAI', 'wp-ai-edit' );
+        }
+
+        return __( 'Azure OpenAI', 'wp-ai-edit' );
+    }
+
+    public static function get_provider_icon_url( string $provider ): string {
+        $normalized_provider = self::normalize_provider( $provider );
+
+        if ( $normalized_provider === self::PROVIDER_ANTHROPIC ) {
+            return WP_AI_EDIT_URL . 'assets/icons/anthropic.png';
+        }
+
+        if ( $normalized_provider === self::PROVIDER_OPENAI ) {
+            return WP_AI_EDIT_URL . 'assets/icons/openai.png';
+        }
+
+        return WP_AI_EDIT_URL . 'assets/icons/azure-openai.png';
+    }
+
+    public static function get_provider_short_label( string $provider ): string {
+        $normalized_provider = self::normalize_provider( $provider );
+
+        if ( $normalized_provider === self::PROVIDER_ANTHROPIC ) {
+            return 'Claude';
+        }
+
+        if ( $normalized_provider === self::PROVIDER_OPENAI ) {
+            return 'OpenAI';
+        }
+
+        return 'AOAI';
+    }
+
+    /**
+     * Whether this provider requires a user-configurable endpoint URL.
+     */
+    public static function provider_needs_endpoint( string $provider ): bool {
+        $normalized_provider = self::normalize_provider( $provider );
+        return $normalized_provider !== self::PROVIDER_ANTHROPIC;
+    }
+
+    public static function get_provider_endpoint_placeholder( string $provider ): string {
+        $normalized_provider = self::normalize_provider( $provider );
+
+        if ( $normalized_provider === self::PROVIDER_OPENAI ) {
+            return self::get_default_endpoint_for_provider( $normalized_provider );
+        }
+
+        return 'https://your-resource.openai.azure.com';
+    }
+
+    public static function get_provider_endpoint_help( string $provider ): string {
+        $normalized_provider = self::normalize_provider( $provider );
+
+        if ( $normalized_provider === self::PROVIDER_OPENAI ) {
+            return __( 'OpenAI uses https://api.openai.com/v1 by default. Leave the endpoint blank to use it, or enter a compatible base URL.', 'wp-ai-edit' );
+        }
+
+        return __( 'Enter your Azure OpenAI resource URL (e.g. https://your-resource.openai.azure.com). The path /openai/v1 is added automatically.', 'wp-ai-edit' );
+    }
+
+    /**
+     * @return array{endpoint: string, api_key_encrypted: string, model: string}
+     */
+    public static function get_empty_provider_settings(): array {
+        return [
+            'endpoint'          => '',
+            'api_key_encrypted' => '',
+            'model'             => self::get_default_model(),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $settings
+     */
+    public static function get_active_provider_from_settings( array $settings ): string {
+        return self::normalize_provider(
+            (string) ( $settings['active_provider'] ?? $settings['provider'] ?? self::get_default_provider() )
+        );
+    }
+
+    /**
+     * @param array<string, mixed> $settings
+     * @return array{endpoint: string, api_key_encrypted: string, model: string}
+     */
+    public static function get_provider_settings_from_settings( array $settings, string $provider ): array {
+        $normalized_provider = self::normalize_provider( $provider );
+        $defaults            = self::get_empty_provider_settings();
+        $config              = $defaults;
+        $providers           = $settings['providers'] ?? [];
+        $has_model           = false;
+
+        if ( is_array( $providers ) ) {
+            $provider_settings = $providers[ $normalized_provider ] ?? null;
+
+            if ( is_array( $provider_settings ) ) {
+                $config['endpoint']          = sanitize_url( (string) ( $provider_settings['endpoint'] ?? '' ) );
+                $config['api_key_encrypted'] = (string) ( $provider_settings['api_key_encrypted'] ?? '' );
+                $config['model']             = self::normalize_model( (string) ( $provider_settings['model'] ?? self::get_default_model() ) );
+                $has_model                   = array_key_exists( 'model', $provider_settings );
+            }
+        }
+
+        $legacy_provider = self::normalize_provider( (string) ( $settings['provider'] ?? self::get_default_provider() ) );
+
+        if ( $normalized_provider === $legacy_provider ) {
+            if ( $config['endpoint'] === '' ) {
+                $config['endpoint'] = sanitize_url( (string) ( $settings['endpoint'] ?? '' ) );
+            }
+
+            if ( $config['api_key_encrypted'] === '' ) {
+                $config['api_key_encrypted'] = (string) ( $settings['api_key_encrypted'] ?? '' );
+            }
+
+            if ( ! $has_model && isset( $settings['model'] ) ) {
+                $config['model'] = self::normalize_model( (string) $settings['model'] );
+            }
+        }
+
+        return $config;
+    }
+
     public static function get_default_endpoint_for_provider( string $provider ): string {
         $normalized_provider = self::normalize_provider( $provider );
+
+        if ( $normalized_provider === self::PROVIDER_ANTHROPIC ) {
+            return self::ANTHROPIC_API_ENDPOINT;
+        }
 
         if ( $normalized_provider === self::PROVIDER_OPENAI ) {
             return self::OPENAI_API_ENDPOINT;
@@ -102,10 +320,11 @@ final class OpenAIClient {
             return null;
         }
 
-        $provider  = self::normalize_provider( (string) ( $settings['provider'] ?? self::get_default_provider() ) );
-        $endpoint  = self::normalize_endpoint( $provider, (string) ( $settings['endpoint'] ?? '' ) );
-        $encrypted = $settings['api_key_encrypted'] ?? '';
-        $model     = $settings['model'] ?? 'gpt-5.4';
+        $provider          = self::get_active_provider_from_settings( $settings );
+        $provider_settings = self::get_provider_settings_from_settings( $settings, $provider );
+        $endpoint          = self::normalize_endpoint( $provider, $provider_settings['endpoint'] );
+        $encrypted         = $provider_settings['api_key_encrypted'];
+        $model             = self::normalize_model( $provider_settings['model'] );
 
         if ( $endpoint === '' || $encrypted === '' ) {
             return null;
@@ -126,7 +345,7 @@ final class OpenAIClient {
     public static function from_config( string $provider, string $endpoint, string $api_key, string $model ): ?self {
         $normalized_provider = self::normalize_provider( $provider );
         $normalized_endpoint = self::normalize_endpoint( $normalized_provider, $endpoint );
-        $normalized_model    = sanitize_text_field( $model );
+        $normalized_model    = self::normalize_model( $model );
 
         if ( $normalized_endpoint === '' || $api_key === '' || $normalized_model === '' ) {
             return null;
@@ -142,11 +361,157 @@ final class OpenAIClient {
     private static function normalize_endpoint( string $provider, string $endpoint ): string {
         $normalized_endpoint = rtrim( sanitize_url( $endpoint ), '/' );
 
-        if ( $normalized_endpoint !== '' ) {
-            return $normalized_endpoint;
+        if ( $normalized_endpoint === '' ) {
+            return self::get_default_endpoint_for_provider( $provider );
         }
 
-        return self::get_default_endpoint_for_provider( $provider );
+        // Auto-append /openai/v1 for Azure OpenAI base URLs.
+        if ( $provider === self::PROVIDER_AZURE_OPENAI ) {
+            $normalized_endpoint = self::ensure_azure_path( $normalized_endpoint );
+        }
+
+        return $normalized_endpoint;
+    }
+
+    /**
+     * Ensure Azure OpenAI endpoint includes the /openai/v1 path.
+     */
+    private static function ensure_azure_path( string $url ): string {
+        $parsed = wp_parse_url( $url );
+        $path   = rtrim( $parsed['path'] ?? '', '/' );
+
+        // Already has the full path.
+        if ( str_ends_with( $path, '/openai/v1' ) ) {
+            return $url;
+        }
+
+        // Has /openai but not /v1.
+        if ( str_ends_with( $path, '/openai' ) ) {
+            return $url . '/v1';
+        }
+
+        // Base URL only (e.g. https://xxx.openai.azure.com).
+        return rtrim( $url, '/' ) . '/openai/v1';
+    }
+
+    /**
+     * Stream a vision (image analysis) chat completion via SSE.
+     *
+     * Injects the image into the messages in the appropriate provider format,
+     * then delegates to the standard stream_chat method.
+     *
+     * @param array{role: string, content: string}[] $messages
+     */
+    public function stream_chat_vision( array $messages, string $image_url, int $max_tokens = 2048 ): void {
+        $messages = $this->inject_image_into_messages( $messages, $image_url );
+        if ( $messages === null ) {
+            self::send_sse_error( __( 'Failed to process the image for analysis.', 'wp-ai-edit' ) );
+            return;
+        }
+        $this->stream_chat( $messages, $max_tokens );
+    }
+
+    /**
+     * Convert the last user message to multi-modal format with image content.
+     *
+     * For OpenAI / Azure OpenAI: uses image_url type.
+     * For Anthropic: downloads the image and encodes as base64.
+     *
+     * @param array{role: string, content: string}[] $messages
+     * @return array{role: string, content: mixed}[]|null
+     */
+    private function inject_image_into_messages( array $messages, string $image_url ): ?array {
+        for ( $i = count( $messages ) - 1; $i >= 0; $i-- ) {
+            if ( $messages[ $i ]['role'] !== 'user' ) {
+                continue;
+            }
+
+            $text = (string) $messages[ $i ]['content'];
+
+            if ( $this->provider === self::PROVIDER_ANTHROPIC ) {
+                $image_data = $this->download_image_as_base64( $image_url );
+                if ( $image_data === null ) {
+                    return null;
+                }
+                $messages[ $i ]['content'] = [
+                    [
+                        'type'   => 'image',
+                        'source' => [
+                            'type'       => 'base64',
+                            'media_type' => $image_data['media_type'],
+                            'data'       => $image_data['data'],
+                        ],
+                    ],
+                    [
+                        'type' => 'text',
+                        'text' => $text,
+                    ],
+                ];
+            } else {
+                $messages[ $i ]['content'] = [
+                    [
+                        'type' => 'text',
+                        'text' => $text,
+                    ],
+                    [
+                        'type'      => 'image_url',
+                        'image_url' => [ 'url' => $image_url ],
+                    ],
+                ];
+            }
+
+            break;
+        }
+
+        return $messages;
+    }
+
+    /**
+     * Download an image and return its base64-encoded data.
+     *
+     * @return array{media_type: string, data: string}|null
+     */
+    private function download_image_as_base64( string $url ): ?array {
+        $parsed = wp_parse_url( $url );
+        $scheme = strtolower( $parsed['scheme'] ?? '' );
+        if ( ! in_array( $scheme, [ 'http', 'https' ], true ) ) {
+            return null;
+        }
+
+        $response = wp_remote_get( $url, [
+            'timeout'     => 30,
+            'redirection' => 3,
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            return null;
+        }
+
+        $code = wp_remote_retrieve_response_code( $response );
+        if ( $code !== 200 ) {
+            return null;
+        }
+
+        $body         = wp_remote_retrieve_body( $response );
+        $content_type = wp_remote_retrieve_header( $response, 'content-type' );
+
+        $allowed_types = [ 'image/jpeg', 'image/png', 'image/gif', 'image/webp' ];
+        $media_type    = explode( ';', (string) $content_type )[0];
+
+        if ( ! in_array( $media_type, $allowed_types, true ) ) {
+            return null;
+        }
+
+        // Limit to 20 MB
+        if ( strlen( $body ) > 20 * 1024 * 1024 ) {
+            return null;
+        }
+
+        // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+        return [
+            'media_type' => $media_type,
+            'data'       => base64_encode( $body ),
+        ];
     }
 
     /**
@@ -155,6 +520,11 @@ final class OpenAIClient {
      * @param array{role: string, content: string}[] $messages
      */
     public function stream_chat( array $messages, int $max_tokens = 2048 ): void {
+        if ( $this->provider === self::PROVIDER_ANTHROPIC ) {
+            $this->stream_chat_anthropic( $messages, $max_tokens );
+            return;
+        }
+
         $url = $this->endpoint . '/chat/completions';
 
         $body = wp_json_encode( [
@@ -261,6 +631,10 @@ final class OpenAIClient {
      * @return array{success: bool, message: string}
      */
     public function test_connection(): array {
+        if ( $this->provider === self::PROVIDER_ANTHROPIC ) {
+            return $this->test_connection_anthropic();
+        }
+
         $url = $this->endpoint . '/chat/completions';
 
         $body = wp_json_encode( [
@@ -316,6 +690,12 @@ final class OpenAIClient {
             'Content-Type: application/json',
         ];
 
+        if ( $this->provider === self::PROVIDER_ANTHROPIC ) {
+            $headers[] = 'x-api-key: ' . $this->api_key;
+            $headers[] = 'anthropic-version: ' . self::ANTHROPIC_VERSION;
+            return $headers;
+        }
+
         if ( $this->provider === self::PROVIDER_OPENAI ) {
             $headers[] = 'Authorization: Bearer ' . $this->api_key;
             return $headers;
@@ -334,6 +714,12 @@ final class OpenAIClient {
             'Content-Type' => 'application/json',
         ];
 
+        if ( $this->provider === self::PROVIDER_ANTHROPIC ) {
+            $headers['x-api-key']          = $this->api_key;
+            $headers['anthropic-version']  = self::ANTHROPIC_VERSION;
+            return $headers;
+        }
+
         if ( $this->provider === self::PROVIDER_OPENAI ) {
             $headers['Authorization'] = 'Bearer ' . $this->api_key;
             return $headers;
@@ -342,6 +728,195 @@ final class OpenAIClient {
         $headers['api-key'] = $this->api_key;
 
         return $headers;
+    }
+
+    // ── Anthropic-specific methods ──
+
+    /**
+     * Extract system prompt from messages and return Anthropic-formatted request parts.
+     *
+     * @param array{role: string, content: string}[] $messages
+     * @return array{system: string, messages: array{role: string, content: string}[]}
+     */
+    private static function split_system_for_anthropic( array $messages ): array {
+        $system       = '';
+        $user_messages = [];
+
+        foreach ( $messages as $msg ) {
+            if ( $msg['role'] === 'system' ) {
+                $system .= ( $system !== '' ? "\n\n" : '' ) . $msg['content'];
+            } else {
+                $user_messages[] = $msg;
+            }
+        }
+
+        return [
+            'system'   => $system,
+            'messages' => $user_messages,
+        ];
+    }
+
+    /**
+     * @param array{role: string, content: string}[] $messages
+     */
+    private function stream_chat_anthropic( array $messages, int $max_tokens ): void {
+        $url   = $this->endpoint . '/messages';
+        $parts = self::split_system_for_anthropic( $messages );
+
+        $payload = [
+            'model'      => $this->model,
+            'max_tokens' => $max_tokens,
+            'messages'   => $parts['messages'],
+            'stream'     => true,
+        ];
+
+        if ( $parts['system'] !== '' ) {
+            $payload['system'] = $parts['system'];
+        }
+
+        $body = wp_json_encode( $payload );
+
+        if ( $body === false ) {
+            self::send_sse_error( __( 'Failed to encode request body.', 'wp-ai-edit' ) );
+            return;
+        }
+
+        $ch = curl_init();
+
+        if ( $ch === false ) {
+            self::send_sse_error( __( 'Failed to initialize cURL.', 'wp-ai-edit' ) );
+            return;
+        }
+
+        curl_setopt_array( $ch, [
+            CURLOPT_URL            => $url,
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $body,
+            CURLOPT_HTTPHEADER     => $this->get_curl_headers(),
+            CURLOPT_RETURNTRANSFER => false,
+            CURLOPT_TIMEOUT        => 120,
+            CURLOPT_CONNECTTIMEOUT => 10,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_WRITEFUNCTION  => static function ( $ch, string $data ) : int {
+                $lines = explode( "\n", $data );
+
+                foreach ( $lines as $line ) {
+                    $line = trim( $line );
+
+                    if ( $line === '' || str_starts_with( $line, 'event: ' ) ) {
+                        continue;
+                    }
+
+                    if ( ! str_starts_with( $line, 'data: ' ) ) {
+                        continue;
+                    }
+
+                    $json_str = substr( $line, 6 );
+                    $payload  = json_decode( $json_str, true );
+
+                    if ( ! is_array( $payload ) ) {
+                        continue;
+                    }
+
+                    $type = $payload['type'] ?? '';
+
+                    if ( $type === 'content_block_delta' ) {
+                        $text = $payload['delta']['text'] ?? null;
+                        if ( $text !== null ) {
+                            $sse_data = wp_json_encode( [ 'content' => $text ] );
+                            echo "data: {$sse_data}\n\n";
+                            self::flush_output();
+                        }
+                    } elseif ( $type === 'message_stop' ) {
+                        echo "data: [DONE]\n\n";
+                        self::flush_output();
+                    } elseif ( $type === 'error' ) {
+                        $error_msg = $payload['error']['message'] ?? 'Unknown Anthropic error';
+                        self::send_sse_error( $error_msg );
+                    }
+                }
+
+                return strlen( $data );
+            },
+        ] );
+
+        $result = curl_exec( $ch );
+
+        if ( $result === false ) {
+            $error = curl_error( $ch );
+            $errno = curl_errno( $ch );
+            curl_close( $ch );
+            self::send_sse_error(
+                sprintf(
+                    __( 'cURL error (%1$d): %2$s', 'wp-ai-edit' ),
+                    $errno,
+                    $error
+                )
+            );
+            return;
+        }
+
+        $http_code = (int) curl_getinfo( $ch, CURLINFO_HTTP_CODE );
+        curl_close( $ch );
+
+        if ( $http_code >= 400 ) {
+            self::send_sse_error(
+                sprintf(
+                    __( 'API error: HTTP %d', 'wp-ai-edit' ),
+                    $http_code
+                )
+            );
+        }
+    }
+
+    /**
+     * @return array{success: bool, message: string}
+     */
+    private function test_connection_anthropic(): array {
+        $url = $this->endpoint . '/messages';
+
+        $body = wp_json_encode( [
+            'model'      => $this->model,
+            'max_tokens' => 5,
+            'messages'   => [
+                [ 'role' => 'user', 'content' => 'Say "OK".' ],
+            ],
+        ] );
+
+        $response = wp_remote_post( $url, [
+            'timeout' => 15,
+            'headers' => $this->get_wp_headers(),
+            'body'    => $body,
+        ] );
+
+        if ( is_wp_error( $response ) ) {
+            return [
+                'success' => false,
+                'message' => $response->get_error_message(),
+            ];
+        }
+
+        $code     = wp_remote_retrieve_response_code( $response );
+        $body_str = wp_remote_retrieve_body( $response );
+
+        if ( $code === 200 ) {
+            return [
+                'success' => true,
+                'message' => __( 'Connection successful!', 'wp-ai-edit' ),
+            ];
+        }
+
+        $decoded   = json_decode( $body_str, true );
+        $error_msg = $decoded['error']['message'] ?? $body_str;
+
+        return [
+            'success' => false,
+            'message' => sprintf(
+                __( 'HTTP %1$d: %2$s', 'wp-ai-edit' ),
+                $code,
+                $error_msg
+            ),
+        ];
     }
 
     // ── Encryption helpers ──

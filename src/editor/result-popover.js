@@ -25,8 +25,13 @@ const ALLOWED_TAGS = [
 
 const ALLOWED_ATTR = [ 'href', 'target', 'rel', 'class' ];
 
+const stripCodeFences = ( text ) =>
+	text
+		.replace( /^```(?:html|\w*)\s*\n?/gm, '' )
+		.replace( /\n?```\s*$/gm, '' );
+
 const sanitizeHtml = ( html ) =>
-	DOMPurify.sanitize( html, {
+	DOMPurify.sanitize( stripCodeFences( html ), {
 		ALLOWED_TAGS,
 		ALLOWED_ATTR,
 	} );

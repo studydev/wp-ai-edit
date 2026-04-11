@@ -14,17 +14,22 @@ final class RestApi {
 
     private const NAMESPACE = 'wp-ai-edit/v1';
 
-    private const VALID_ACTIONS = [ 'command', 'write_more', 'my_style', 'highlight', 'summarize', 'analogy', 'grammar', 'seo_helper' ];
+    private const VALID_ACTIONS = [ 'command', 'write_more', 'my_style', 'highlight', 'summarize', 'analogy', 'grammar', 'seo_helper', 'describe_image', 'suggest_caption', 'image_command' ];
+
+    private const IMAGE_ACTIONS = [ 'describe_image', 'suggest_caption', 'image_command' ];
 
     private const MAX_TOKENS = [
-        'command'    => 2048,
-        'write_more' => 1024,
-        'my_style'   => 2048,
-        'highlight'  => 2048,
-        'summarize'  => 512,
-        'analogy'    => 2048,
-        'grammar'    => 2048,
-        'seo_helper' => 1024,
+        'command'          => 2048,
+        'write_more'       => 1024,
+        'my_style'         => 2048,
+        'highlight'        => 2048,
+        'summarize'        => 512,
+        'analogy'          => 2048,
+        'grammar'          => 2048,
+        'seo_helper'       => 1024,
+        'describe_image'   => 1024,
+        'suggest_caption'  => 512,
+        'image_command'    => 2048,
     ];
 
     private const MAX_TEXT_LENGTH = 50000;
@@ -68,6 +73,18 @@ final class RestApi {
                     'default'           => '',
                     'sanitize_callback' => 'sanitize_text_field',
                 ],
+                'image_url' => [
+                    'required'          => false,
+                    'type'              => 'string',
+                    'default'           => '',
+                    'sanitize_callback' => 'sanitize_url',
+                    'validate_callback' => static function ( $value ): bool {
+                        if ( $value === '' ) {
+                            return true;
+                        }
+                        return filter_var( $value, FILTER_VALIDATE_URL ) !== false;
+                    },
+                ],
             ],
         ] );
 
@@ -75,6 +92,19 @@ final class RestApi {
             'methods'             => 'POST',
             'callback'            => [ $this, 'handle_test_connection' ],
             'permission_callback' => static fn (): bool => current_user_can( 'manage_options' ),
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/active-provider', [
+            'methods'             => 'POST',
+            'callback'            => [ $this, 'handle_set_active_provider' ],
+            'permission_callback' => static fn (): bool => current_user_can( 'manage_options' ),
+            'args'                => [
+                'provider' => [
+                    'required'          => true,
+                    'type'              => 'string',
+                    'sanitize_callback' => 'sanitize_text_field',
+                ],
+            ],
         ] );
 
         register_rest_route( self::NAMESPACE, '/prompts', [
@@ -97,9 +127,10 @@ final class RestApi {
         }
         set_transient( $throttle, true, self::RATE_LIMIT_SECONDS );
 
-        $action  = $request->get_param( 'action' );
-        $text    = $request->get_param( 'text' );
-        $command = $request->get_param( 'command' ) ?? '';
+        $action    = $request->get_param( 'action' );
+        $text      = $request->get_param( 'text' );
+        $command   = $request->get_param( 'command' ) ?? '';
+        $image_url = $request->get_param( 'image_url' ) ?? '';
 
         $client = OpenAIClient::from_settings();
         if ( $client === null ) {
@@ -110,11 +141,18 @@ final class RestApi {
             exit;
         }
 
-        $messages   = PromptManager::build_messages( $action, $text, $command );
         $max_tokens = self::MAX_TOKENS[ $action ] ?? 2048;
 
         OpenAIClient::init_sse_headers();
-        $client->stream_chat( $messages, $max_tokens );
+
+        if ( in_array( $action, self::IMAGE_ACTIONS, true ) && $image_url !== '' ) {
+            $messages = PromptManager::build_vision_messages( $action, $command );
+            $client->stream_chat_vision( $messages, $image_url, $max_tokens );
+        } else {
+            $messages   = PromptManager::build_messages( $action, $text, $command );
+            $client->stream_chat( $messages, $max_tokens );
+        }
+
         exit;
     }
 
@@ -127,14 +165,15 @@ final class RestApi {
         }
 
         $provider = OpenAIClient::normalize_provider(
-            sanitize_text_field( (string) ( $params['provider'] ?? ( $settings['provider'] ?? OpenAIClient::get_default_provider() ) ) )
+            sanitize_text_field( (string) ( $params['provider'] ?? OpenAIClient::get_active_provider_from_settings( $settings ) ) )
         );
-        $endpoint = sanitize_url( (string) ( $params['endpoint'] ?? ( $settings['endpoint'] ?? '' ) ) );
-        $model    = sanitize_text_field( (string) ( $params['model'] ?? ( $settings['model'] ?? 'gpt-5.4' ) ) );
+        $provider_settings = OpenAIClient::get_provider_settings_from_settings( $settings, $provider );
+        $endpoint = sanitize_url( (string) ( $params['endpoint'] ?? $provider_settings['endpoint'] ) );
+        $model    = OpenAIClient::normalize_model( (string) ( $params['model'] ?? $provider_settings['model'] ) );
         $api_key  = sanitize_text_field( (string) ( $params['api_key'] ?? '' ) );
 
-        if ( $api_key === '' || $api_key === '••••••••' ) {
-            $encrypted = (string) ( $settings['api_key_encrypted'] ?? '' );
+        if ( $api_key === '' || $api_key === AdminSettings::MASKED_API_KEY ) {
+            $encrypted = $provider_settings['api_key_encrypted'];
             $api_key   = OpenAIClient::decrypt_api_key( $encrypted ) ?? '';
         }
 
@@ -150,6 +189,25 @@ final class RestApi {
         $result = $client->test_connection();
 
         return new \WP_REST_Response( $result, $result['success'] ? 200 : 400 );
+    }
+
+    public function handle_set_active_provider( \WP_REST_Request $request ): \WP_REST_Response {
+        $provider = OpenAIClient::normalize_provider( (string) $request->get_param( 'provider' ) );
+        $settings = get_option( 'wp_ai_edit_settings', [] );
+
+        if ( ! is_array( $settings ) ) {
+            $settings = [];
+        }
+
+        $settings['active_provider'] = $provider;
+        $settings['provider']        = $provider;
+
+        update_option( 'wp_ai_edit_settings', $settings, false );
+
+        return new \WP_REST_Response( [
+            'success'  => true,
+            'provider' => $provider,
+        ] );
     }
 
     public function handle_get_prompts( \WP_REST_Request $request ): \WP_REST_Response {

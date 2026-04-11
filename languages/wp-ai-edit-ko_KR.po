@@ -1,13 +1,13 @@
-# Korean translation for WP AI Edit
-# Copyright (C) 2026 WP AI Edit
+# Korean translation for Hemtory AI Editor
+# Copyright (C) 2026 Hemtory AI Editor
 # This file is distributed under the GPL-2.0-or-later.
 msgid ""
 msgstr ""
-"Project-Id-Version: WP AI Edit 1.1.0\n"
-"Report-Msgid-Bugs-To: https://github.com/wp-ai-edit\n"
-"POT-Creation-Date: 2026-04-11T00:00:00+00:00\n"
-"PO-Revision-Date: 2026-04-11T00:00:00+09:00\n"
-"Last-Translator: WP AI Edit <admin@hemtory.com>\n"
+"Project-Id-Version: Hemtory AI Editor 1.3.0\n"
+"Report-Msgid-Bugs-To: https://github.com/studydev/wp-ai-edit\n"
+"POT-Creation-Date: 2026-04-12T00:00:00+00:00\n"
+"PO-Revision-Date: 2026-04-12T00:00:00+09:00\n"
+"Last-Translator: Hemtory AI Editor <admin@hemtory.com>\n"
 "Language-Team: Korean <ko@li.org>\n"
 "Language: ko_KR\n"
 "MIME-Version: 1.0\n"
@@ -18,23 +18,11 @@ msgstr ""
 #. Plugin Name
 #: wp-ai-edit.php
 msgid "WP AI Edit"
-msgstr "WP AI Edit"
-
-#: includes/class-admin-settings.php
-msgid "Azure OpenAI API Settings"
-msgstr "Azure OpenAI API 설정"
-
-#: includes/class-admin-settings.php
-msgid "Configure your Azure OpenAI API connection settings."
-msgstr "Azure OpenAI API 연결 설정을 구성합니다."
+msgstr "Hemtory AI Editor"
 
 #: includes/class-admin-settings.php
 msgid "API Endpoint URL"
 msgstr "API 엔드포인트 URL"
-
-#: includes/class-admin-settings.php
-msgid "Enter your Azure OpenAI API endpoint URL."
-msgstr "Azure OpenAI API 엔드포인트 URL을 입력하세요."
 
 #: includes/class-admin-settings.php
 msgid "API Key"
@@ -43,10 +31,6 @@ msgstr "API 키"
 #: includes/class-admin-settings.php
 msgid "Test Connection"
 msgstr "연결 테스트"
-
-#: includes/class-admin-settings.php
-msgid "API key is saved (encrypted). Enter a new key to replace it."
-msgstr "API 키가 저장되었습니다(암호화됨). 새 키를 입력하면 교체됩니다."
 
 #: includes/class-admin-settings.php
 msgid "Model"
@@ -99,10 +83,6 @@ msgstr "연결 실패:"
 #: includes/class-admin-settings.php
 msgid "Reset this prompt to default?"
 msgstr "이 프롬프트를 기본값으로 초기화하시겠습니까?"
-
-#: includes/class-admin-settings.php
-msgid "Invalid API endpoint. Only HTTPS URLs pointing to public hosts are allowed."
-msgstr "잘못된 API 엔드포인트입니다. HTTPS 프로토콜의 공개 호스트 URL만 허용됩니다."
 
 #: includes/class-prompt-manager.php
 msgid "Your Command"
@@ -202,6 +182,54 @@ msgstr "이어쓰기"
 msgid "Close"
 msgstr "닫기"
 
+#: includes/class-admin-settings.php
+msgid "AI API Settings"
+msgstr "AI API 설정"
+
+#: includes/class-admin-settings.php
+msgid "API Provider"
+msgstr "API 공급자"
+
+#: includes/class-admin-settings.php
+msgid "Choose an LLM tab, save each provider with its own endpoint, API key, and model, and the last active tab will be used for editor requests."
+msgstr "LLM 탭을 선택하고, 각 공급자별로 엔드포인트, API 키, 모델을 따로 저장하세요. 마지막으로 활성화한 탭이 에디터 요청에 사용됩니다."
+
+#: includes/class-admin-settings.php
+msgid "Each provider keeps its own endpoint, API key, and model. Changing the active tab also changes which LLM the editor will call."
+msgstr "각 공급자별로 엔드포인트, API 키, 모델이 따로 저장됩니다. 활성 탭을 변경하면 에디터가 호출하는 LLM도 변경됩니다."
+
+#: includes/class-admin-settings.php
+msgid "Failed to activate the selected LLM. Save settings to apply it manually."
+msgstr "선택한 LLM을 활성화하지 못했습니다. 설정 저장으로 직접 적용해 주세요."
+
+#: includes/class-admin-settings.php
+msgid "Invalid API endpoint for %s. Only HTTPS URLs pointing to public hosts are allowed."
+msgstr "%s의 API 엔드포인트가 올바르지 않습니다. HTTPS 프로토콜의 공개 호스트 URL만 허용됩니다."
+
+#: includes/class-admin-settings.php
+msgid "API key for %s is saved (encrypted). Enter a new key to replace it."
+msgstr "%s의 API 키가 저장되었습니다(암호화됨). 새 키를 입력하면 교체됩니다."
+
+#: includes/class-admin-settings.php
+msgid "LLM Providers"
+msgstr "LLM 공급자"
+
+#: includes/class-openai-client.php
+msgid "Azure OpenAI"
+msgstr "Azure OpenAI"
+
+#: includes/class-openai-client.php
+msgid "OpenAI"
+msgstr "OpenAI"
+
+#: includes/class-openai-client.php
+msgid "Enter your Azure OpenAI resource URL (e.g. https://your-resource.openai.azure.com). The path /openai/v1 is added automatically."
+msgstr "Azure OpenAI 리소스 URL을 입력하세요 (예: https://your-resource.openai.azure.com). /openai/v1 경로는 자동으로 추가됩니다."
+
+#: includes/class-openai-client.php
+msgid "OpenAI uses https://api.openai.com/v1 by default. Leave the endpoint blank to use it, or enter a compatible base URL."
+msgstr "OpenAI는 기본적으로 https://api.openai.com/v1 을 사용합니다. 비워두면 기본값이 사용되며, 호환되는 URL을 직접 입력할 수도 있습니다."
+
 #: src/editor/command-input.js
 msgid "Enter your command"
 msgstr "명령을 입력하세요"
@@ -217,3 +245,43 @@ msgstr "취소"
 #: src/editor/command-input.js
 msgid "Run"
 msgstr "실행"
+
+#: includes/class-openai-client.php
+msgid "Anthropic"
+msgstr "Anthropic"
+
+#: includes/class-admin-settings.php
+msgid "%s uses a fixed API endpoint. No configuration needed."
+msgstr "%s는 고정 API 엔드포인트를 사용합니다. 별도 설정이 필요 없습니다."
+
+#: includes/class-admin-settings.php
+msgid "Price: input / output per MTok"
+msgstr "가격: 입력 / 출력 (MTok 당)"
+
+#: includes/class-admin-settings.php
+msgid "GPT-5.4 Pro costs $30/MTok input and $180/MTok output — significantly more expensive than other models. Continue?"
+msgstr "GPT-5.4 Pro는 입력 $30/MTok, 출력 $180/MTok으로 다른 모델보다 훨씬 비쌉니다. 계속하시겠습니까?"
+
+#: src/editor/image-action-popover.js
+msgid "Describe Image"
+msgstr "이미지 설명"
+
+#: src/editor/image-action-popover.js
+msgid "Suggest Caption"
+msgstr "캡션 제안"
+
+#: src/editor/plugin.js
+msgid "AI Image Analysis"
+msgstr "AI 이미지 분석"
+
+#: src/editor/plugin.js
+msgid "No image URL found in the selected block."
+msgstr "선택한 블록에서 이미지 URL을 찾을 수 없습니다."
+
+#: includes/class-prompt-manager.php
+msgid "Image Command"
+msgstr "이미지 명령"
+
+#: includes/class-openai-client.php
+msgid "Failed to process the image for analysis."
+msgstr "이미지 분석을 위한 처리에 실패했습니다."

@@ -1,7 +1,7 @@
 {
-	"name": "wp-ai-edit",
-	"version": "1.0.0",
-	"description": "AI-powered content editing for WordPress Gutenberg editor",
+	"name": "hemtory-ai-editor",
+	"version": "1.3.0",
+	"description": "Hemtory AI Editor - AI-powered content editing for WordPress Gutenberg editor",
 	"scripts": {
 		"build": "wp-scripts build",
 		"start": "wp-scripts start",

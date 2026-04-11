@@ -1,11 +1,16 @@
 // Handles SSE responses from the AI generate endpoint.
 export async function streamGenerate(
-	{ action, text, command = '' },
+	{ action, text, command = '', image_url = '' },
 	callbacks
 ) {
 	const { onChunk, onDone, onError } = callbacks;
 
 	const url = `${ window.wpAiEdit.restUrl }generate`;
+
+	const body = { action, text, command };
+	if ( image_url ) {
+		body.image_url = image_url;
+	}
 
 	let response;
 	try {
@@ -15,7 +20,7 @@ export async function streamGenerate(
 				'Content-Type': 'application/json',
 				'X-WP-Nonce': window.wpAiEdit.nonce,
 			},
-			body: JSON.stringify( { action, text, command } ),
+			body: JSON.stringify( body ),
 		} );
 	} catch ( err ) {
 		onError( err.message );

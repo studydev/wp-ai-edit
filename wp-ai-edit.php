@@ -1,12 +1,13 @@
 <?php
 /**
- * Plugin Name: WP AI Edit
+ * Plugin Name: Hemtory AI Editor
  * Plugin URI:  https://github.com/studydev/wp-ai-edit
- * Description: AI-powered content editing for the WordPress Gutenberg editor. Provides writing, summarizing, SEO, and custom command features via Azure OpenAI API or OpenAI API using GPT-5.4 models.
- * Version:     1.0.0
+ * Description: AI-powered content editing for the WordPress Gutenberg editor. Supports Azure OpenAI, OpenAI (GPT-5.4), and Anthropic (Claude) for writing, proofreading, summarizing, SEO analysis, and image description.
+ * Version:     1.3.0
  * Requires at least: 6.4
  * Requires PHP: 8.3
- * Author:      WP AI Edit
+ * Author:      Hemtory
+ * Author URI:  https://hemtory.com
  * License:     GPL-2.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain: wp-ai-edit

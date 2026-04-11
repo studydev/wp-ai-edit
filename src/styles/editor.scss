@@ -5,6 +5,44 @@
     }
 }
 
+// ── Multi-block Floating AI Button ──
+.wp-ai-edit-multi-float {
+    z-index: 100000 !important;
+
+    .components-popover__content {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        min-width: 0 !important;
+        overflow: visible !important;
+    }
+}
+
+.wp-ai-edit-multi-button {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    background: #fff !important;
+    border: 1px solid #dcdcde !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+        background: #f0f0f0 !important;
+        transform: scale(1.08);
+    }
+
+    img {
+        border-radius: 50%;
+    }
+}
+
 // ── Popover Container ──
 .wp-ai-edit-popover {
     .components-popover__content {
@@ -33,6 +71,16 @@
             gap: 8px;
         }
     }
+}
+
+.wp-ai-edit-provider-indicator {
+    margin: 6px 16px 2px;
+    padding-top: 10px;
+    border-top: 1px solid #dcdcde;
+    color: #50575e;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 
 // ── Command Input ──

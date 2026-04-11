@@ -15,6 +15,7 @@ final class AdminSettings {
     private const OPTION_GROUP = 'wp_ai_edit_settings_group';
     private const OPTION_NAME  = 'wp_ai_edit_settings';
     private const MENU_SLUG    = 'wp-ai-edit';
+    public const MASKED_API_KEY = '••••••••';
 
     public static function get_instance(): self {
         if ( self::$instance === null ) {
@@ -31,8 +32,8 @@ final class AdminSettings {
 
     public function add_menu_page(): void {
         add_menu_page(
-            __( 'WP AI Edit', 'wp-ai-edit' ),
-            __( 'WP AI Edit', 'wp-ai-edit' ),
+            __( 'Hemtory AI Editor', 'wp-ai-edit' ),
+            __( 'Hemtory AI Editor', 'wp-ai-edit' ),
             'manage_options',
             self::MENU_SLUG,
             [ $this, 'render_page' ],
@@ -130,7 +131,7 @@ final class AdminSettings {
 
     /**
      * @param mixed $input
-     * @return array<string, string>
+    * @return array<string, mixed>
      */
     public function sanitize_settings( mixed $input ): array {
         if ( ! is_array( $input ) ) {
@@ -142,39 +143,69 @@ final class AdminSettings {
             $current = [];
         }
 
-        $sanitized = [];
-
-        $provider = OpenAIClient::normalize_provider(
-            sanitize_text_field( (string) ( $input['provider'] ?? ( $current['provider'] ?? OpenAIClient::get_default_provider() ) ) )
+        $sanitized       = [];
+        $active_provider = OpenAIClient::normalize_provider(
+            sanitize_text_field( (string) ( $input['active_provider'] ?? ( $current['active_provider'] ?? $current['provider'] ?? OpenAIClient::get_default_provider() ) ) )
         );
-        $sanitized['provider'] = $provider;
 
-        // Endpoint
-        $endpoint = sanitize_url( $input['endpoint'] ?? '' );
-        if ( $endpoint !== '' && ! OpenAIClient::validate_endpoint( $endpoint ) ) {
-            add_settings_error(
-                self::OPTION_NAME,
-                'invalid_endpoint',
-                __( 'Invalid API endpoint. Only HTTPS URLs pointing to public hosts are allowed.', 'wp-ai-edit' ),
-                'error'
-            );
-            $endpoint = $current['endpoint'] ?? '';
+        $sanitized['active_provider'] = $active_provider;
+        $sanitized['provider']        = $active_provider;
+        $sanitized['providers']       = [];
+
+        foreach ( OpenAIClient::get_supported_providers() as $provider ) {
+            $current_provider_settings = OpenAIClient::get_provider_settings_from_settings( $current, $provider );
+            $provider_input            = $input['providers'][ $provider ] ?? [];
+
+            if ( ! is_array( $provider_input ) ) {
+                $provider_input = [];
+            }
+
+            // If this provider's panel was hidden (not the active tab),
+            // the browser submits empty values — keep the previously saved data.
+            $is_active_input = ( $provider === $active_provider );
+
+            $endpoint_input = sanitize_url( (string) ( $provider_input['endpoint'] ?? '' ) );
+            if ( ! $is_active_input && $endpoint_input === '' ) {
+                $endpoint = $current_provider_settings['endpoint'];
+            } else {
+                $endpoint = $endpoint_input;
+            }
+            if ( $endpoint !== '' && ! OpenAIClient::validate_endpoint( $endpoint ) ) {
+                add_settings_error(
+                    self::OPTION_NAME,
+                    'invalid_endpoint_' . $provider,
+                    sprintf(
+                        /* translators: %s: provider label */
+                        __( 'Invalid API endpoint for %s. Only HTTPS URLs pointing to public hosts are allowed.', 'wp-ai-edit' ),
+                        OpenAIClient::get_provider_label( $provider )
+                    ),
+                    'error'
+                );
+                $endpoint = $current_provider_settings['endpoint'];
+            }
+
+            $raw_key = (string) ( $provider_input['api_key'] ?? '' );
+            if ( $raw_key !== '' && $raw_key !== self::MASKED_API_KEY ) {
+                $encrypted = OpenAIClient::encrypt_api_key( sanitize_text_field( $raw_key ) );
+            } else {
+                $encrypted = $current_provider_settings['api_key_encrypted'];
+            }
+
+            $model_input = (string) ( $provider_input['model'] ?? '' );
+            if ( ! $is_active_input && $model_input === '' ) {
+                $model = $current_provider_settings['model'];
+            } else {
+                $model = OpenAIClient::normalize_model(
+                    $model_input !== '' ? $model_input : $current_provider_settings['model']
+                );
+            }
+
+            $sanitized['providers'][ $provider ] = [
+                'endpoint'          => $endpoint,
+                'api_key_encrypted' => is_string( $encrypted ) ? $encrypted : '',
+                'model'             => $model,
+            ];
         }
-        $sanitized['endpoint'] = $endpoint;
-
-        // API Key — only update if a new one is provided
-        $raw_key = $input['api_key'] ?? '';
-        if ( $raw_key !== '' && $raw_key !== '••••••••' ) {
-            $encrypted = OpenAIClient::encrypt_api_key( sanitize_text_field( $raw_key ) );
-            $sanitized['api_key_encrypted'] = $encrypted;
-        } else {
-            $sanitized['api_key_encrypted'] = $current['api_key_encrypted'] ?? '';
-        }
-
-        // Model
-        $allowed_models = [ 'gpt-5.4-pro', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.4' ];
-        $model = sanitize_text_field( $input['model'] ?? 'gpt-5.4' );
-        $sanitized['model'] = in_array( $model, $allowed_models, true ) ? $model : 'gpt-5.4';
 
         // Prompts
         $prompts = [];
@@ -224,20 +255,12 @@ final class AdminSettings {
                 'restUrl'        => esc_url_raw( rest_url( 'wp-ai-edit/v1/' ) ),
                 'nonce'          => wp_create_nonce( 'wp_rest' ),
                 'noTailActions'  => PromptManager::get_no_tail_actions(),
-                'providerDefaults' => [
-                    OpenAIClient::PROVIDER_AZURE_OPENAI => [
-                        'endpointPlaceholder' => 'https://your-resource.openai.azure.com/openai/v1',
-                        'endpointHelp'        => __( 'Azure OpenAI example: https://your-resource.openai.azure.com/openai/v1', 'wp-ai-edit' ),
-                    ],
-                    OpenAIClient::PROVIDER_OPENAI => [
-                        'endpointPlaceholder' => OpenAIClient::get_default_endpoint_for_provider( OpenAIClient::PROVIDER_OPENAI ),
-                        'endpointHelp'        => __( 'OpenAI uses https://api.openai.com/v1 by default. Leave the endpoint blank to use it, or enter a compatible base URL.', 'wp-ai-edit' ),
-                    ],
-                ],
                 'i18n'           => [
                     'testing'      => __( 'Testing connection...', 'wp-ai-edit' ),
                     'success'      => __( 'Connection successful!', 'wp-ai-edit' ),
                     'failed'       => __( 'Connection failed:', 'wp-ai-edit' ),
+                    'providerSwitchFailed' => __( 'Failed to activate the selected LLM. Save settings to apply it manually.', 'wp-ai-edit' ),
+                    'proModelWarning' => __( 'GPT-5.4 Pro costs $30/MTok input and $180/MTok output — significantly more expensive than other models. Continue?', 'wp-ai-edit' ),
                     'resetConfirm' => __( 'Reset this prompt to default?', 'wp-ai-edit' ),
                 ],
             ]
@@ -262,30 +285,42 @@ final class AdminSettings {
     }
 
     public function render_api_section(): void {
-        echo '<p>' . esc_html__( 'Choose Azure OpenAI or OpenAI, then configure the API connection for GPT-5.4 models.', 'wp-ai-edit' ) . '</p>';
+        echo '<p>' . esc_html__( 'Choose an LLM tab, save each provider with its own endpoint, API key, and model, and the last active tab will be used for editor requests.', 'wp-ai-edit' ) . '</p>';
     }
 
     public function render_provider_field(): void {
-        $settings  = get_option( self::OPTION_NAME, [] );
-        $value     = OpenAIClient::normalize_provider( (string) ( $settings['provider'] ?? OpenAIClient::get_default_provider() ) );
-        $providers = [
-            OpenAIClient::PROVIDER_AZURE_OPENAI => __( 'Azure OpenAI', 'wp-ai-edit' ),
-            OpenAIClient::PROVIDER_OPENAI       => __( 'OpenAI', 'wp-ai-edit' ),
-        ];
+        $settings        = get_option( self::OPTION_NAME, [] );
+        $active_provider = is_array( $settings )
+            ? OpenAIClient::get_active_provider_from_settings( $settings )
+            : OpenAIClient::get_default_provider();
         ?>
-        <select id="wp-ai-edit-provider" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[provider]">
-            <?php foreach ( $providers as $provider_value => $provider_label ) : ?>
-                <option
-                    value="<?php echo esc_attr( $provider_value ); ?>"
-                    <?php selected( $value, $provider_value ); ?>
+        <input
+            type="hidden"
+            id="wp-ai-edit-active-provider"
+            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[active_provider]"
+            value="<?php echo esc_attr( $active_provider ); ?>"
+        />
+        <div class="wp-ai-edit-provider-tabs" role="tablist" aria-label="<?php esc_attr_e( 'LLM Providers', 'wp-ai-edit' ); ?>">
+            <?php foreach ( OpenAIClient::get_supported_providers() as $provider ) : ?>
+                <button
+                    type="button"
+                    class="button wp-ai-edit-provider-tab<?php echo $provider === $active_provider ? ' is-active' : ''; ?>"
+                    data-provider="<?php echo esc_attr( $provider ); ?>"
+                    role="tab"
+                    aria-selected="<?php echo $provider === $active_provider ? 'true' : 'false'; ?>"
                 >
-                    <?php echo esc_html( $provider_label ); ?>
-                </option>
+                    <img
+                        src="<?php echo esc_url( OpenAIClient::get_provider_icon_url( $provider ) ); ?>"
+                        alt=""
+                        class="wp-ai-edit-provider-icon"
+                    /><?php echo esc_html( OpenAIClient::get_provider_label( $provider ) ); ?>
+                </button>
             <?php endforeach; ?>
-        </select>
+        </div>
         <p class="description">
-            <?php esc_html_e( 'Select which API provider should be used for GPT-5.4 requests.', 'wp-ai-edit' ); ?>
+            <?php esc_html_e( 'Each provider keeps its own endpoint, API key, and model. Changing the active tab also changes which LLM the editor will call.', 'wp-ai-edit' ); ?>
         </p>
+        <p class="description wp-ai-edit-provider-switch-status" id="wp-ai-edit-provider-switch-status" aria-live="polite"></p>
         <?php
     }
 
@@ -304,82 +339,126 @@ final class AdminSettings {
     }
 
     public function render_endpoint_field(): void {
-        $settings    = get_option( self::OPTION_NAME, [] );
-        $provider    = OpenAIClient::normalize_provider( (string) ( $settings['provider'] ?? OpenAIClient::get_default_provider() ) );
-        $value       = $settings['endpoint'] ?? '';
-        $placeholder = $provider === OpenAIClient::PROVIDER_OPENAI
-            ? OpenAIClient::get_default_endpoint_for_provider( $provider )
-            : 'https://your-resource.openai.azure.com/openai/v1';
+        $settings        = get_option( self::OPTION_NAME, [] );
+        $settings        = is_array( $settings ) ? $settings : [];
+        $active_provider = OpenAIClient::get_active_provider_from_settings( $settings );
         ?>
-        <input
-            type="url"
-            id="wp-ai-edit-endpoint"
-            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[endpoint]"
-            value="<?php echo esc_attr( $value ); ?>"
-            class="regular-text"
-            placeholder="<?php echo esc_attr( $placeholder ); ?>"
-        />
-        <p class="description" id="wp-ai-edit-endpoint-hint">
+        <?php foreach ( OpenAIClient::get_supported_providers() as $provider ) : ?>
             <?php
-            echo esc_html(
-                $provider === OpenAIClient::PROVIDER_OPENAI
-                    ? __( 'OpenAI uses https://api.openai.com/v1 by default. Leave the endpoint blank to use it, or enter a compatible base URL.', 'wp-ai-edit' )
-                    : __( 'Azure OpenAI example: https://your-resource.openai.azure.com/openai/v1', 'wp-ai-edit' )
-            );
+            $provider_settings = OpenAIClient::get_provider_settings_from_settings( $settings, $provider );
+            $is_active         = $provider === $active_provider;
+            $needs_endpoint    = OpenAIClient::provider_needs_endpoint( $provider );
             ?>
-        </p>
+            <div class="wp-ai-edit-provider-panel<?php echo $is_active ? ' is-active' : ''; ?>" data-provider="<?php echo esc_attr( $provider ); ?>"<?php echo $is_active ? '' : ' hidden'; ?>>
+                <?php if ( $needs_endpoint ) : ?>
+                    <input
+                        type="url"
+                        id="wp-ai-edit-endpoint-<?php echo esc_attr( $provider ); ?>"
+                        name="<?php echo esc_attr( self::OPTION_NAME ); ?>[providers][<?php echo esc_attr( $provider ); ?>][endpoint]"
+                        value="<?php echo esc_attr( $provider_settings['endpoint'] ); ?>"
+                        class="regular-text"
+                        placeholder="<?php echo esc_attr( OpenAIClient::get_provider_endpoint_placeholder( $provider ) ); ?>"
+                    />
+                    <p class="description">
+                        <?php echo esc_html( OpenAIClient::get_provider_endpoint_help( $provider ) ); ?>
+                    </p>
+                <?php else : ?>
+                    <p class="description">
+                        <?php
+                        printf(
+                            /* translators: %s: provider name */
+                            esc_html__( '%s uses a fixed API endpoint. No configuration needed.', 'wp-ai-edit' ),
+                            esc_html( OpenAIClient::get_provider_label( $provider ) )
+                        );
+                        ?>
+                    </p>
+                <?php endif; ?>
+            </div>
+        <?php endforeach; ?>
         <?php
     }
 
     public function render_api_key_field(): void {
-        $settings   = get_option( self::OPTION_NAME, [] );
-        $has_key    = ! empty( $settings['api_key_encrypted'] ?? '' );
-        $display    = $has_key ? '••••••••' : '';
+        $settings        = get_option( self::OPTION_NAME, [] );
+        $settings        = is_array( $settings ) ? $settings : [];
+        $active_provider = OpenAIClient::get_active_provider_from_settings( $settings );
         ?>
-        <input
-            type="password"
-            id="wp-ai-edit-api-key"
-            name="<?php echo esc_attr( self::OPTION_NAME ); ?>[api_key]"
-            value="<?php echo esc_attr( $display ); ?>"
-            class="regular-text"
-            autocomplete="new-password"
-        />
-        <button
-            type="button"
-            id="wp-ai-edit-test-connection"
-            class="button button-secondary"
-        >
-            <?php esc_html_e( 'Test Connection', 'wp-ai-edit' ); ?>
-        </button>
-        <span id="wp-ai-edit-connection-status"></span>
-        <?php if ( $has_key ) : ?>
-            <p class="description">
-                <?php esc_html_e( 'API key is saved (encrypted). Enter a new key to replace it.', 'wp-ai-edit' ); ?>
-            </p>
-        <?php endif; ?>
+        <?php foreach ( OpenAIClient::get_supported_providers() as $provider ) : ?>
+            <?php
+            $provider_settings = OpenAIClient::get_provider_settings_from_settings( $settings, $provider );
+            $has_key           = $provider_settings['api_key_encrypted'] !== '';
+            $display           = $has_key ? self::MASKED_API_KEY : '';
+            $is_active         = $provider === $active_provider;
+            ?>
+            <div class="wp-ai-edit-provider-panel<?php echo $is_active ? ' is-active' : ''; ?>" data-provider="<?php echo esc_attr( $provider ); ?>"<?php echo $is_active ? '' : ' hidden'; ?>>
+                <input
+                    type="password"
+                    id="wp-ai-edit-api-key-<?php echo esc_attr( $provider ); ?>"
+                    name="<?php echo esc_attr( self::OPTION_NAME ); ?>[providers][<?php echo esc_attr( $provider ); ?>][api_key]"
+                    value="<?php echo esc_attr( $display ); ?>"
+                    class="regular-text"
+                    autocomplete="new-password"
+                />
+                <button
+                    type="button"
+                    class="button button-secondary wp-ai-edit-test-connection"
+                    data-provider="<?php echo esc_attr( $provider ); ?>"
+                >
+                    <?php esc_html_e( 'Test Connection', 'wp-ai-edit' ); ?>
+                </button>
+                <span class="wp-ai-edit-connection-status" id="wp-ai-edit-connection-status-<?php echo esc_attr( $provider ); ?>"></span>
+                <?php if ( $has_key ) : ?>
+                    <p class="description">
+                        <?php
+                        printf(
+                            /* translators: %s: provider label */
+                            esc_html__( 'API key for %s is saved (encrypted). Enter a new key to replace it.', 'wp-ai-edit' ),
+                            esc_html( OpenAIClient::get_provider_label( $provider ) )
+                        );
+                        ?>
+                    </p>
+                <?php endif; ?>
+            </div>
+        <?php endforeach; ?>
         <?php
     }
 
     public function render_model_field(): void {
-        $settings = get_option( self::OPTION_NAME, [] );
-        $value    = $settings['model'] ?? 'gpt-5.4';
-        $models   = [
-            'gpt-5.4-pro'  => 'GPT-5.4 Pro',
-            'gpt-5.4-mini' => 'GPT-5.4 Mini',
-            'gpt-5.4-nano' => 'GPT-5.4 Nano',
-            'gpt-5.4'      => 'GPT-5.4',
-        ];
+        $settings        = get_option( self::OPTION_NAME, [] );
+        $settings        = is_array( $settings ) ? $settings : [];
+        $active_provider = OpenAIClient::get_active_provider_from_settings( $settings );
         ?>
-        <select id="wp-ai-edit-model" name="<?php echo esc_attr( self::OPTION_NAME ); ?>[model]">
-            <?php foreach ( $models as $model_value => $model_label ) : ?>
-                <option
-                    value="<?php echo esc_attr( $model_value ); ?>"
-                    <?php selected( $value, $model_value ); ?>
-                >
-                    <?php echo esc_html( $model_label ); ?>
-                </option>
-            <?php endforeach; ?>
-        </select>
+        <?php foreach ( OpenAIClient::get_supported_providers() as $provider ) : ?>
+            <?php
+            $provider_settings = OpenAIClient::get_provider_settings_from_settings( $settings, $provider );
+            $models            = OpenAIClient::get_models_for_provider( $provider );
+            $current_model     = OpenAIClient::normalize_model_for_provider( $provider_settings['model'], $provider );
+            $is_active         = $provider === $active_provider;
+            ?>
+            <div class="wp-ai-edit-provider-panel<?php echo $is_active ? ' is-active' : ''; ?>" data-provider="<?php echo esc_attr( $provider ); ?>"<?php echo $is_active ? '' : ' hidden'; ?>>
+                <input
+                    type="hidden"
+                    id="wp-ai-edit-model-<?php echo esc_attr( $provider ); ?>"
+                    name="<?php echo esc_attr( self::OPTION_NAME ); ?>[providers][<?php echo esc_attr( $provider ); ?>][model]"
+                    value="<?php echo esc_attr( $current_model ); ?>"
+                />
+                <div class="wp-ai-edit-model-tabs" data-provider="<?php echo esc_attr( $provider ); ?>">
+                    <?php foreach ( $models as $model_value => $model_meta ) : ?>
+                        <button
+                            type="button"
+                            class="button wp-ai-edit-model-tab<?php echo $current_model === $model_value ? ' is-active' : ''; ?>"
+                            data-model="<?php echo esc_attr( $model_value ); ?>"
+                        >
+                            <span class="wp-ai-edit-model-name"><?php echo esc_html( $model_meta['label'] ); ?></span>
+                            <span class="wp-ai-edit-model-price"><?php echo esc_html( $model_meta['price'] ); ?></span>
+                        </button>
+                    <?php endforeach; ?>
+                </div>
+                <p class="description">
+                    <?php esc_html_e( 'Price: input / output per MTok', 'wp-ai-edit' ); ?>
+                </p>
+            </div>
+        <?php endforeach; ?>
         <?php
     }
 

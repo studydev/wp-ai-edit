@@ -14,7 +14,10 @@ final class PromptManager {
     private const TAIL_OPTION_KEY = 'wp_ai_edit_tail_prompt';
 
     /** Actions that do NOT receive the tail prompt. */
-    private const NO_TAIL_ACTIONS = [ 'seo_helper' ];
+    private const NO_TAIL_ACTIONS = [ 'seo_helper', 'describe_image', 'suggest_caption', 'image_command' ];
+
+    /** Actions that are image-based (vision). */
+    private const IMAGE_ACTIONS = [ 'describe_image', 'suggest_caption', 'image_command' ];
 
     /** @var array<string, string> */
     private static array $defaults = [
@@ -32,6 +35,9 @@ final class PromptManager {
 3. A concise document summary within 100 characters.
 
 Format your response as structured HTML using h3 headings for each section, ol (ordered list) for titles, ul (unordered list) for keywords, and p (paragraph) for the summary. Do not include any other commentary.',
+        'describe_image'  => 'You are an image analysis expert. Describe the provided image in detail, including its visual elements, composition, colors, mood, and any text visible in the image. Write your description as a natural, flowing paragraph. Use the same language as the blog or website content surrounding this image. Respond only with the description text, without any additional commentary or formatting.',
+        'suggest_caption' => 'You are a content editor. Look at the provided image and write a concise, engaging caption suitable for a blog post or article. The caption should describe what the image shows in one or two sentences. Use the same language as the blog or website content surrounding this image. Respond only with the caption text.',
+        'image_command'   => 'You are a helpful assistant that can analyze images. Follow the user\'s instruction about the provided image exactly. Respond only with the resulting text, without any additional explanation or formatting.',
     ];
 
     private static string $default_tail_prompt = 'IMPORTANT — Response format rules:
@@ -52,14 +58,17 @@ Format your response as structured HTML using h3 headings for each section, ol (
      */
     public static function get_action_labels(): array {
         return [
-            'command'    => __( 'Your Command', 'wp-ai-edit' ),
-            'write_more' => __( 'Write More', 'wp-ai-edit' ),
-            'my_style'   => __( 'My Style', 'wp-ai-edit' ),
-            'highlight'  => __( 'Highlight', 'wp-ai-edit' ),
-            'summarize'  => __( 'Summarize', 'wp-ai-edit' ),
-            'analogy'    => __( 'Write Analogy', 'wp-ai-edit' ),
-            'grammar'    => __( 'Fix Grammar', 'wp-ai-edit' ),
-            'seo_helper' => __( 'SEO Helper', 'wp-ai-edit' ),
+            'command'         => __( 'Your Command', 'wp-ai-edit' ),
+            'write_more'      => __( 'Write More', 'wp-ai-edit' ),
+            'my_style'        => __( 'My Style', 'wp-ai-edit' ),
+            'highlight'       => __( 'Highlight', 'wp-ai-edit' ),
+            'summarize'       => __( 'Summarize', 'wp-ai-edit' ),
+            'analogy'         => __( 'Write Analogy', 'wp-ai-edit' ),
+            'grammar'         => __( 'Fix Grammar', 'wp-ai-edit' ),
+            'seo_helper'      => __( 'SEO Helper', 'wp-ai-edit' ),
+            'describe_image'  => __( 'Describe Image', 'wp-ai-edit' ),
+            'suggest_caption' => __( 'Suggest Caption', 'wp-ai-edit' ),
+            'image_command'   => __( 'Image Command', 'wp-ai-edit' ),
         ];
     }
 
@@ -166,5 +175,49 @@ Format your response as structured HTML using h3 headings for each section, ol (
         }
 
         return $messages;
+    }
+
+    /**
+     * Build messages for vision (image analysis) actions.
+     *
+     * The returned messages contain the system prompt and a user text prompt.
+     * The image content is injected later by OpenAIClient based on the provider format.
+     *
+     * @return array{role: string, content: string}[]
+     */
+    public static function build_vision_messages( string $action, string $command = '' ): array {
+        $system_prompt = self::get_full( $action );
+
+        $messages = [
+            [ 'role' => 'system', 'content' => $system_prompt ],
+        ];
+
+        if ( $action === 'image_command' && $command !== '' ) {
+            $user_text = $command;
+        } else {
+            $user_text = self::get_image_user_prompt( $action );
+        }
+
+        $messages[] = [
+            'role'    => 'user',
+            'content' => $user_text,
+        ];
+
+        return $messages;
+    }
+
+    /**
+     * @return string[]
+     */
+    public static function get_image_actions(): array {
+        return self::IMAGE_ACTIONS;
+    }
+
+    private static function get_image_user_prompt( string $action ): string {
+        return match ( $action ) {
+            'describe_image'  => 'Please describe this image in detail.',
+            'suggest_caption' => 'Please suggest a caption for this image.',
+            default           => 'Analyze this image.',
+        };
     }
 }

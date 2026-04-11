@@ -1,8 +1,8 @@
-# WP AI Edit - Project Guidelines
+# Hemtory AI Editor - Project Guidelines
 
 ## Overview
 
-WordPress Gutenberg 블록 에디터용 AI 콘텐츠 편집 플러그인. Azure OpenAI API 기반.
+WordPress Gutenberg 블록 에디터용 AI 콘텐츠 편집 플러그인. Azure OpenAI, OpenAI, Anthropic API 지원.
 
 ## Tech Stack
 
@@ -19,7 +19,7 @@ WordPress Gutenberg 블록 에디터용 AI 콘텐츠 편집 플러그인. Azure 
 1. JS/CSS 변경 시: `npm run build` 실행
 2. zip 패키징:
    ```bash
-   mkdir -p releases && zip -r releases/wp-ai-edit.zip \
+   mkdir -p releases && zip -r releases/hemtory-ai-editor.zip \
      wp-ai-edit.php \
      readme.txt \
      LICENSE \
@@ -29,7 +29,7 @@ WordPress Gutenberg 블록 에디터용 AI 콘텐츠 편집 플러그인. Azure 
      languages/ \
      -x "*.DS_Store" -x "__MACOSX/*"
    ```
-3. `wp-ai-edit.zip`은 `releases/` 디렉토리에 생성한다.
+3. `hemtory-ai-editor.zip`은 `releases/` 디렉토리에 생성한다.
 
 ### 패키지 포함 대상
 

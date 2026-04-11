@@ -51,7 +51,19 @@ final class Plugin {
         );
 
         $settings = get_option( 'wp_ai_edit_settings', [] );
-        $has_api_key = ! empty( $settings['api_key_encrypted'] ?? '' );
+        if ( ! is_array( $settings ) ) {
+            $settings = [];
+        }
+
+        $active_provider   = OpenAIClient::get_active_provider_from_settings( $settings );
+        $provider_settings = OpenAIClient::get_provider_settings_from_settings( $settings, $active_provider );
+        $model             = OpenAIClient::normalize_model( $provider_settings['model'] );
+        $has_api_key       = $provider_settings['api_key_encrypted'] !== '';
+        $provider_summary  = sprintf(
+            '%1$s - %2$s',
+            OpenAIClient::get_provider_short_label( $active_provider ),
+            OpenAIClient::get_model_label( $model )
+        );
 
         wp_localize_script(
             'wp-ai-edit-editor',
@@ -60,7 +72,11 @@ final class Plugin {
                 'restUrl'  => esc_url_raw( rest_url( 'wp-ai-edit/v1/' ) ),
                 'nonce'    => wp_create_nonce( 'wp_rest' ),
                 'hasApiKey' => $has_api_key,
-                'model'    => $settings['model'] ?? 'gpt-5.4',
+                'activeProvider' => $active_provider,
+                'activeProviderLabel' => OpenAIClient::get_provider_short_label( $active_provider ),
+                'model'    => $model,
+                'modelLabel' => OpenAIClient::get_model_label( $model ),
+                'activeProviderSummary' => $provider_summary,
             ]
         );
 
