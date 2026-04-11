@@ -21,7 +21,7 @@ final class PromptManager {
         'command'    => 'You are a helpful content writing assistant. Follow the user\'s instruction exactly. Respond only with the resulting text, without any additional explanation.',
         'write_more' => 'You are a content writer. Continue writing the following text naturally, maintaining the same tone, style, and language. Write 2-3 additional paragraphs. Respond only with the new continuation text.',
         'my_style'   => 'You are a writing style transformer. Rewrite the following text to match the author\'s personal writing style as described below. Preserve the original meaning while adapting the expression. Maintain the same language. Respond only with the rewritten text.',
-        'highlight'  => 'You are a content highlighter. Analyze the following text and identify the most important key phrases, keywords, and significant terms. Return the original text with critical terms wrapped in <strong> tags and secondary key phrases wrapped in <em> tags. Preserve the original text structure, meaning, and language.',
+        'highlight'  => 'You are a content highlighter. Analyze the following text and identify the most important key phrases, keywords, and significant terms. Return the original text with critical terms wrapped in bold (strong) tags and secondary key phrases wrapped in emphasis (em) tags. Preserve the original text structure, meaning, and language.',
         'summarize'  => 'You are a skilled summarizer. Summarize the following text concisely, capturing the key points in a brief paragraph. Maintain the same language as the original text. Respond only with the summary.',
         'analogy'    => 'You are a creative writer. Rewrite the following text using vivid metaphors and analogies to make the concepts more relatable and engaging. Maintain the same language as the original. Respond only with the rewritten text.',
         'grammar'    => 'You are a grammar expert. Fix all grammar, spelling, and punctuation errors in the following text. Preserve the original meaning, style, and language. Respond only with the corrected text.',
@@ -31,15 +31,13 @@ final class PromptManager {
 2. Five core keywords or key phrases extracted from the content.
 3. A concise document summary within 100 characters.
 
-Format your response as structured HTML using <h3> headings for each section, <ol> for titles, <ul> for keywords, and <p> for the summary. Do not include any other commentary.',
+Format your response as structured HTML using h3 headings for each section, ol (ordered list) for titles, ul (unordered list) for keywords, and p (paragraph) for the summary. Do not include any other commentary.',
     ];
 
     private static string $default_tail_prompt = 'IMPORTANT — Response format rules:
 - Your response MUST be valid HTML compatible with the WordPress Gutenberg block editor.
-- Use ONLY these HTML tags: <p>, <strong>, <b>, <em>, <i>, <a href="...">, <ul>, <ol>, <li>, <blockquote>, <h2>, <h3>, <h4>, <code>.
-- Wrap every paragraph in <p> tags.
 - Do NOT use Markdown formatting.
-- Do NOT include Gutenberg block comments (<!-- wp:... -->).
+- Do NOT include Gutenberg block comments (such as wp:paragraph markers).
 - Return ONLY the inner HTML content — no wrapper elements, no explanations.';
 
     /**
