@@ -4,7 +4,7 @@ Tags: ai, content, editor, gutenberg, openai, anthropic, claude
 Requires at least: 6.4
 Tested up to: 6.9
 Requires PHP: 8.3
-Stable tag: 1.3.0
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -113,32 +113,55 @@ No. The plugin itself is free. You only pay for the API usage directly to your c
 
 == Changelog ==
 
-= 1.3.0 =
-* Renamed plugin to Hemtory AI Editor
-* Added AI image analysis: Describe Image, Suggest Caption, and custom image commands
-* Image analysis results are inserted as a new paragraph below the image block
-* Vision support for OpenAI/Azure (image_url) and Anthropic (base64)
-
-= 1.2.0 =
-* Added Anthropic (Claude) API support with Claude Opus 4.6, Sonnet 4.6, and Haiku 4.5 models
-* Per-provider model tabs with pricing display (input/output per MTok)
-* Azure OpenAI endpoint auto-appends /openai/v1 when entering a base resource URL
-* Provider tabs now show logo icons (Azure, OpenAI, Anthropic)
-* GPT-5.4 Pro selection prompts a cost confirmation dialog
-* Admin settings redesigned with card layout and improved spacing
-* Each provider saves its own endpoint, API key, and model independently
-
-= 1.1.0 =
-* Added My Style action (replaced Improve) – rewrite text in your personal style
-* Added Highlight action – mark key phrases with HTML tags
-* Added SEO Helper action – full-document SEO analysis
-* Added Tail Prompt system – configurable response format instruction
-* AI responses now return Gutenberg-compatible HTML
-* Added full prompt preview with expand/collapse in admin settings
-* Result popover now renders HTML content with styling
-
 = 1.0.0 =
-* Initial release
+
+**AI Editing (8 Actions)**
+* Your Command – free-text AI instructions on selected text
+* Write More – continue writing with the same tone and style
+* My Style – rewrite text in your personal writing style via customizable prompt
+* Highlight – mark key phrases with strong/em HTML tags
+* Summarize – condense long text into key points
+* Write Analogy – rewrite using metaphors and analogies
+* Fix Grammar – correct grammar, spelling, and punctuation
+* SEO Helper – full-document analysis for titles, keywords, and summary
+
+**AI Image Analysis (Vision)**
+* Describe Image – analyze and describe visual elements, composition, colors, and mood
+* Suggest Caption – generate a concise caption for blog posts
+* Image Command – free-text instructions about any selected image
+* Results inserted as a new paragraph block below the image
+* Vision support: OpenAI/Azure (image_url) and Anthropic (base64)
+
+**Multi-Provider Support**
+* Azure OpenAI, OpenAI, and Anthropic (Claude) with independent settings per provider
+* Per-provider model tabs with pricing display (input/output per MTok)
+* Models: GPT-5.4 Nano/Mini/Standard/Pro, Claude Haiku 4.5/Sonnet 4.6/Opus 4.6
+* GPT-5.4 Pro cost confirmation dialog
+* Provider logo icons on tabs
+
+**Editor Integration**
+* Single block, multi-block (mixed types), and image block selection
+* Real-time streaming responses via SSE
+* Gutenberg-compatible HTML output via configurable Tail Prompt
+* Floating AI button for multi-block selection
+* Markdown code fence stripping for clean HTML output
+
+**Customization**
+* Fully editable system prompts per action with live preview
+* Tail Prompt system for consistent AI response formatting
+* Per-provider endpoint, API key, and model management
+
+**Security & Infrastructure**
+* API key encryption using libsodium
+* DOMPurify XSS protection on AI responses
+* SSRF prevention – HTTPS-only endpoints with private IP blocking
+* Rate limiting – 5-second per-user cooldown
+* Input limit – max 50,000 characters per request
+* Capability-based access control (manage_options / edit_posts)
+
+**Internationalization**
+* Korean (ko_KR) translation included
+* Full i18n support via WordPress text domain
 
 == Screenshots ==
 

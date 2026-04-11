@@ -3,7 +3,7 @@
  * Plugin Name: Hemtory AI Editor
  * Plugin URI:  https://github.com/studydev/wp-ai-edit
  * Description: AI-powered content editing for the WordPress Gutenberg editor. Supports Azure OpenAI, OpenAI (GPT-5.4), and Anthropic (Claude) for writing, proofreading, summarizing, SEO analysis, and image description.
- * Version:     1.3.0
+ * Version:     1.0.0
  * Requires at least: 6.4
  * Requires PHP: 8.3
  * Author:      Hemtory
