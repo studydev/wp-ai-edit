@@ -40,12 +40,15 @@ WP AI Edit adds AI-powered editing capabilities directly into the Gutenberg bloc
 
 == Installation ==
 
-1. Upload the plugin to `/wp-content/plugins/wp-ai-edit/`
-2. Activate the plugin
-3. Go to **WP AI Edit** in the admin menu
-4. Enter your Azure OpenAI API endpoint, key, and select a model
-5. Click **Test Connection** to verify
-6. Start editing with AI in the Gutenberg editor
+1. Download `wp-ai-edit.zip` from the `output/` directory
+2. In WordPress admin, go to **Plugins → Add New → Upload Plugin** and upload the ZIP file
+3. Activate the plugin
+4. Go to **WP AI Edit** in the admin menu
+5. Enter your Azure OpenAI API endpoint, key, and select a model
+6. Click **Test Connection** to verify
+7. Start editing with AI in the Gutenberg editor
+
+**Reinstalling:** To reinstall or update, first **deactivate** the plugin and then **delete** it from the Plugins page. After that, upload and install the new ZIP file.
 
 == Frequently Asked Questions ==
 
